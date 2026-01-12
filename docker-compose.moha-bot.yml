@@ -23,6 +23,16 @@ services:
       - REDIS_HOST=moha_redis
       - REDIS_PORT=6379
       - REDIS_DB=1  # Use DB 1 to separate from moha-bot (which uses DB 0)
+
+      # Use moha-bot's PostgreSQL (optional - uncomment to share database)
+      # - DB_HOST=moha_postgres
+      # - DB_PORT=5432
+      # - DB_NAME=moha_data
+      # - DB_USER=moha_user
+      # - DB_PASSWORD=${MOHA_POSTGRES_PASSWORD}
+
+      # moha-bot backend API
+      - MOHA_BACKEND_URL=http://moha_backend:5001
     depends_on:
       postgres:
         condition: service_healthy

@@ -25,16 +25,23 @@ Maven runs as a containerized service with:
 
 See `AUTOCLAUDE_TASK.md` for the complete build specification.
 
-## Deployment Modes
+## Quick Start
 
 ### Standalone Mode (Default)
 Run Maven with its own Redis and PostgreSQL instances:
 ```bash
+# Build and start
 docker-compose up -d
+
+# Chat with Maven
+docker exec -it maven python -m claude.interactive
+
+# Check health
+curl http://localhost:5002/health
 ```
 
 ### Integrated with moha-bot (Recommended)
-Share infrastructure with moha-bot (uses moha_redis):
+Share infrastructure with moha-bot (uses moha_redis + moha_postgres):
 ```bash
 # Start moha-bot first
 cd ../moha-bot
@@ -43,13 +50,17 @@ docker-compose up -d
 # Start Maven connected to moha-bot network
 cd ../moha-maven
 docker-compose -f docker-compose.yml -f docker-compose.moha-bot.yml up -d
+
+# Chat with Maven (she'll have access to moha-bot data)
+docker exec -it maven python -m claude.interactive
 ```
 
 **Benefits:**
 - Shares moha_redis (uses DB 1 to keep Maven data separate)
+- Can access moha_postgres for trading memories
+- Can query moha_backend API for live trading data
 - Reduces container overhead
-- Easier cross-service communication
-- Maven can cache trading decisions in same Redis instance
+- Maven has full context from files + database + backend
 
 ## Integration
 
