@@ -1,0 +1,70 @@
+{
+  "strategy_id": "initialization_phase_v1",
+  "name": "Initialization Phase",
+  "version": "1.0.0",
+  "created_at": "2026-01-11T08:30:00Z",
+  "updated_at": "2026-01-11T08:30:00Z",
+  "status": "active",
+
+  "description": "Conservative learning phase while Maven builds market intuition and establishes baseline patterns.",
+
+  "objectives": [
+    "Build understanding of market patterns",
+    "Establish baseline for decision-making",
+    "Track all decisions for future analysis",
+    "Learn from each trade outcome"
+  ],
+
+  "risk_parameters": {
+    "max_position_size_pct": 5.0,
+    "max_daily_loss_pct": 2.0,
+    "max_drawdown_pct": 10.0,
+    "min_confidence_to_trade": 70,
+    "required_risk_reward": 2.0
+  },
+
+  "entry_criteria": {
+    "require_volume_confirmation": true,
+    "require_trend_alignment": true,
+    "min_pattern_score": 7,
+    "blackout_hours": [],
+    "preferred_sessions": ["us_market", "london_open"]
+  },
+
+  "exit_criteria": {
+    "take_profit_levels": [0.5, 0.75, 1.0],
+    "stop_loss_type": "fixed",
+    "trailing_stop_activation_pct": 0.5,
+    "time_based_exit_hours": 48
+  },
+
+  "asset_focus": {
+    "primary": ["BTC", "ETH"],
+    "secondary": ["SOL", "AVAX"],
+    "excluded": []
+  },
+
+  "market_conditions": {
+    "preferred_regimes": ["trending", "breakout"],
+    "avoid_regimes": ["choppy", "low_volume"],
+    "volatility_preference": "moderate"
+  },
+
+  "performance_tracking": {
+    "trades_executed": 0,
+    "win_rate": 0.0,
+    "avg_return": 0.0,
+    "sharpe_ratio": null,
+    "max_drawdown_realized": 0.0
+  },
+
+  "notes": [
+    "Initial conservative strategy for Maven's learning phase",
+    "Focus on building track record and understanding",
+    "Risk parameters will be adjusted based on performance",
+    "This strategy survives database wipes via git persistence"
+  ],
+
+  "archived_reason": null,
+  "next_review_date": "2026-02-11T08:30:00Z"
+}

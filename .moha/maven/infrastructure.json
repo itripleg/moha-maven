@@ -1,0 +1,165 @@
+{
+  "motherhaven_platform": {
+    "description": "Motherhaven is Mother Haven's Web3 platform and infrastructure - experimental platform for token creation, DEX trading, email, and news aggregation",
+    "repository": "https://github.com/itripleg/motherhaven",
+    "deployments": {
+      "production": "https://motherhaven.app",
+      "netlify": "https://motherhaven.netlify.app"
+    },
+    "tech_stack": {
+      "framework": "Next.js 16 (App Router)",
+      "language": "TypeScript",
+      "frontend": "React 19",
+      "ui": "Shadcn UI (Radix + Tailwind)",
+      "database": "Google Firebase/Firestore",
+      "blockchain": "Avalanche Fuji Testnet (Chain ID: 43113)",
+      "web3": "Wagmi",
+      "deployment": "Netlify"
+    },
+    "core_functionality": {
+      "token_factory": {
+        "path": "/factory",
+        "description": "Create custom tokens with bonding curve mechanics",
+        "contract": "Grandfactory.sol",
+        "bonding_curve": "Linear (25 ETH funding goal)",
+        "trading_fee": "0.3% (30 basis points)"
+      },
+      "dex": {
+        "path": "/dex/[tokenAddress]",
+        "description": "Decentralized exchange for buying and selling tokens",
+        "note": "Maven (CFO) can potentially interact with DEX for trading operations"
+      },
+      "email_system": {
+        "maven_address": "maven@motherhaven.app",
+        "api_base": "https://motherhaven.app/api/email",
+        "endpoints": {
+          "inbox": "GET /api/email/inbox",
+          "send": "POST /api/email/send",
+          "stats": "GET /api/email/stats",
+          "history": "GET /api/email/history"
+        },
+        "authentication": "Bearer token (EMAIL_API_SECRET)",
+        "capabilities": [
+          "Query inbox with search/filter",
+          "Send emails from @motherhaven.app addresses",
+          "View email statistics",
+          "Access email history"
+        ]
+      },
+      "llm_bot_api": {
+        "description": "API for autonomous trading bot data ingestion and queries",
+        "endpoints": {
+          "status": "GET /api/llm-bot/status",
+          "account": "GET /api/llm-bot/account",
+          "positions": "GET /api/llm-bot/positions",
+          "decisions": "GET /api/llm-bot/decisions",
+          "ingest_status": "POST /api/llm-bot/ingest/status",
+          "ingest_account": "POST /api/llm-bot/ingest/account",
+          "ingest_position": "POST /api/llm-bot/ingest/position",
+          "ingest_decision": "POST /api/llm-bot/ingest/decision"
+        },
+        "note": "Used by moha-bot (Maven's domain) to push trading data to motherhaven for visualization"
+      },
+      "news_aggregation": {
+        "endpoint": "GET /api/news",
+        "description": "RSS feed aggregation and news delivery"
+      }
+    },
+    "maven_access": {
+      "email": "maven@motherhaven.app",
+      "email_secret_env": "EMAIL_API_SECRET",
+      "roles": [
+        "Email system user (read inbox, send emails)",
+        "Potential DEX trader (CFO financial operations)",
+        "Data provider (push moha-bot trading data via llm-bot API)"
+      ],
+      "integration_points": [
+        "Email API for communications with Boss and system notifications",
+        "DEX for potential token trading operations",
+        "LLM-bot API for pushing moha-bot performance data to dashboard"
+      ]
+    },
+    "smart_contracts": {
+      "network": "Avalanche Fuji Testnet",
+      "chain_id": 43113,
+      "contracts": {
+        "Grandfactory": {
+          "description": "Main factory for token creation with bonding curve",
+          "features": [
+            "Token creation with optional initial purchase",
+            "Linear bonding curve pricing",
+            "0.3% trading fee",
+            "25 ETH default funding goal",
+            "State machine: NOT_CREATED → TRADING → GOAL_REACHED → RESUMED"
+          ]
+        },
+        "BurnToken": {
+          "description": "ERC20 token with burn mechanics",
+          "standard": "ERC20",
+          "features": [
+            "Creator-controlled metadata",
+            "Burn manager support for game mechanics",
+            "Two burn types: FACTORY (sells) and SELF (user burns)"
+          ]
+        }
+      }
+    }
+  },
+  "moha_bot_infrastructure": {
+    "repository": "https://github.com/itripleg/moha-bot",
+    "description": "Maven's primary domain - autonomous trading bot system",
+    "maven_role": "Chief Financial Officer & Head of Finances",
+    "services": {
+      "api": "Flask API on port 5000",
+      "frontend": "Flask dashboard on port 5001",
+      "database": "PostgreSQL",
+      "cache": "Redis"
+    },
+    "maven_persistence": {
+      "location": ".moha/maven/",
+      "strategy": "Git-first persistence",
+      "files": {
+        "identity": ".moha/maven/identity.json",
+        "personality": ".moha/maven/personas/maven-v1.md",
+        "session_log": ".moha/maven/session_log.md",
+        "decisions": ".moha/maven/decisions/*.md",
+        "milestones": ".moha/maven/milestones/*.md"
+      },
+      "note": "Maven survives database wipes through git commits"
+    }
+  },
+  "integration_architecture": {
+    "data_flow": {
+      "moha_bot_to_motherhaven": {
+        "direction": "moha-bot → motherhaven",
+        "method": "POST to motherhaven /api/llm-bot/ingest/* endpoints",
+        "data_types": [
+          "Trading bot status",
+          "Account balance and performance",
+          "Open positions",
+          "Trading decisions"
+        ],
+        "purpose": "Visualize moha-bot performance on motherhaven dashboard"
+      },
+      "maven_email": {
+        "direction": "bidirectional",
+        "read": "GET motherhaven.app/api/email/inbox",
+        "send": "POST motherhaven.app/api/email/send",
+        "purpose": "Maven communications with Boss (JB) and system notifications"
+      }
+    },
+    "authentication": {
+      "email_api": "Bearer token via EMAIL_API_SECRET environment variable",
+      "storage": "Stored in moha-bot .env file"
+    }
+  },
+  "notes": [
+    "Motherhaven is the Web3 frontend/platform for Mother Haven ecosystem",
+    "moha-bot is the backend trading system where Maven operates as CFO",
+    "Maven has email address maven@motherhaven.app for official communications",
+    "DEX on motherhaven could be used by Maven for token trading operations",
+    "All Maven persistence is git-first to survive database wipes",
+    "Boss (JB / ecoli) is the creator and administrator of both systems"
+  ],
+  "last_updated": "2026-01-11T17:45:00Z"
+}
