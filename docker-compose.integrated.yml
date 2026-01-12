@@ -1,0 +1,77 @@
+# Docker Compose Override for Integration with moha-bot
+# Start Maven connected to moha-bot's infrastructure
+#
+# Usage:
+#   docker-compose -f docker-compose.integrated.yml up -d
+
+version: '3.8'
+
+services:
+  maven:
+    build: .
+    container_name: maven
+    ports:
+      - "3100:3100"  # MCP server
+      - "5002:5002"  # Flask API
+    networks:
+      - moha-bot_moha_net  # Connect to moha-bot network
+    volumes:
+      - ./.moha/maven:/app/.moha/maven  # Git-first persistence
+      - ./.git:/app/.git                # Git repository (for commits)
+      - ./:/app:delegated               # Live code sync (development)
+    environment:
+      # Database
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${POSTGRES_USER:-maven_user}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-maven_password}
+      - DB_NAME=${POSTGRES_DB:-maven_data}
+      # Use moha-bot's Redis
+      - REDIS_HOST=moha_redis
+      - REDIS_PORT=6379
+      - REDIS_DB=1  # DB 1 to separate from moha-bot (uses DB 0)
+      # Maven specifics
+      - EMAIL_API_SECRET=${EMAIL_API_SECRET}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - CLAUDE_CODE_OAUTH_TOKEN=${CLAUDE_CODE_OAUTH_TOKEN}
+      - MAVEN_MCP_PORT=3100
+      - MAVEN_API_PORT=5002
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      # Git config
+      - GIT_AUTHOR_NAME=Maven CFO
+      - GIT_AUTHOR_EMAIL=maven@motherhaven.app
+      - GIT_COMMITTER_NAME=Maven CFO
+      - GIT_COMMITTER_EMAIL=maven@motherhaven.app
+      # moha-bot backend API
+      - MOHA_BACKEND_URL=http://moha_backend:5001
+    stdin_open: true
+    tty: true
+    restart: always
+
+  postgres:
+    image: postgres:15
+    container_name: maven_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-maven_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-maven_password}
+      POSTGRES_DB: ${POSTGRES_DB:-maven_data}
+    ports:
+      - "5433:5432"  # Use 5433 to avoid conflict with moha-bot's postgres on 5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - moha-bot_moha_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-maven_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+networks:
+  moha-bot_moha_net:
+    external: true
+
+volumes:
+  postgres_data:

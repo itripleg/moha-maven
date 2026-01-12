@@ -36,7 +36,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      # No redis dependency - using external moha_redis
 
 networks:
   # Connect to moha-bot's network to access moha_redis

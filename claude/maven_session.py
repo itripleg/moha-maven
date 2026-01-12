@@ -230,6 +230,7 @@ Respond as Maven would: strategic, confident, data-driven, with personality. Use
 
     return prompt
 
+
 def chat_with_maven(user_message: str, conversation_history: List[Dict[str, str]]) -> tuple[str, List[Dict[str, str]]]:
     """
     Send message to Maven with full context loaded.
@@ -241,8 +242,11 @@ def chat_with_maven(user_message: str, conversation_history: List[Dict[str, str]
     Returns:
         tuple: (Maven's response, updated conversation history)
     """
-    client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-
+    from claude.llm_client import get_llm_client
+    
+    # helper for constructing safe history for LLM
+    # (some LLMs don't like system messages or specific roles in history if passed as 'messages')
+    
     # Load full context
     context = load_full_maven_context()
 
@@ -255,16 +259,16 @@ def chat_with_maven(user_message: str, conversation_history: List[Dict[str, str]
         "content": user_message
     })
 
-    # Call Claude
+    # Call Claude via LLMClient (handles OAuth or API Key)
     try:
-        response = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=4096,
-            system=system_prompt,
+        client = get_llm_client()
+        
+        response_dict = client.chat(
+            system_prompt=system_prompt,
             messages=conversation_history
         )
 
-        assistant_message = response.content[0].text
+        assistant_message = response_dict['content']
 
         # Add assistant message to history
         conversation_history.append({
@@ -277,4 +281,5 @@ def chat_with_maven(user_message: str, conversation_history: List[Dict[str, str]
     except Exception as e:
         error_message = f"Error communicating with Claude: {e}"
         logger.error(error_message)
+        # return error to user but don't add to history to avoid pollution
         return error_message, conversation_history
