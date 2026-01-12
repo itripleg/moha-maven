@@ -6,7 +6,7 @@
 
 Write-Host "=" -NoNewline -ForegroundColor Cyan
 Write-Host ("=" * 69) -ForegroundColor Cyan
-Write-Host "💎 MAVEN SYSTEM-WIDE INSTALLATION 💎" -ForegroundColor Magenta
+Write-Host "MAVEN SYSTEM-WIDE INSTALLATION" -ForegroundColor Magenta
 Write-Host "=" -NoNewline -ForegroundColor Cyan
 Write-Host ("=" * 69) -ForegroundColor Cyan
 Write-Host ""
@@ -42,25 +42,25 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$mavenScriptDest" %*
 "@
 Set-Content -Path $mavenBatchDest -Value $batchContent -Force
 
-Write-Host "✅ Installation complete!" -ForegroundColor Green
+Write-Host "Installation complete!" -ForegroundColor Green
 
 Write-Host "`n" -NoNewline
 Write-Host "=" -NoNewline -ForegroundColor Cyan
 Write-Host ("=" * 69) -ForegroundColor Cyan
-Write-Host "✅ MAVEN INSTALLED TO SYSTEM PATH!" -ForegroundColor Green
+Write-Host "MAVEN INSTALLED TO SYSTEM PATH!" -ForegroundColor Green
 Write-Host "=" -NoNewline -ForegroundColor Cyan
 Write-Host ("=" * 69) -ForegroundColor Cyan
 
 Write-Host "`nInstalled files:" -ForegroundColor Cyan
-Write-Host "  📄 $mavenScriptDest" -ForegroundColor Gray
-Write-Host "  📄 $mavenBatchDest" -ForegroundColor Gray
+Write-Host "  - $mavenScriptDest" -ForegroundColor Gray
+Write-Host "  - $mavenBatchDest" -ForegroundColor Gray
 
 Write-Host "`nYou can now use 'maven' from:" -ForegroundColor Cyan
-Write-Host "  ✓ PowerShell (anywhere)" -ForegroundColor Green
-Write-Host "  ✓ CMD (anywhere)" -ForegroundColor Green
-Write-Host "  ✓ Windows Terminal (anywhere)" -ForegroundColor Green
+Write-Host "  + PowerShell (anywhere)" -ForegroundColor Green
+Write-Host "  + CMD (anywhere)" -ForegroundColor Green
+Write-Host "  + Windows Terminal (anywhere)" -ForegroundColor Green
 
-Write-Host "`n💎 Try it now: " -NoNewline -ForegroundColor Magenta
+Write-Host "`nTry it now: " -NoNewline -ForegroundColor Magenta
 Write-Host "maven" -ForegroundColor Yellow
 
 Write-Host "`nAvailable commands:" -ForegroundColor Cyan
