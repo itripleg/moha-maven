@@ -63,6 +63,10 @@ tmpclaude-*
 .maven_history
 supervisord.log
 supervisord.pid
+nul
+
+# Claude local settings (keep example, ignore local)
+.claude/settings.local.json
 
 # Auto Claude data directory
 .auto-claude/
