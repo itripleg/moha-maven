@@ -722,10 +722,27 @@ File: `utils/redis_cache.py`
 
 **Reference:** `moha-bot/services/api/database/maven_redis.py`
 
+**Configuration:**
+```python
+import os
+import redis
+
+REDIS_CONFIG = {
+    'host': os.getenv('REDIS_HOST', 'redis'),
+    'port': int(os.getenv('REDIS_PORT', 6379)),
+    'db': int(os.getenv('REDIS_DB', 0)),  # DB 0 standalone, DB 1 when using moha_redis
+    'decode_responses': True
+}
+
+redis_client = redis.Redis(**REDIS_CONFIG)
+```
+
 Functions:
-- Cache recent decisions
-- Cache market insights
-- Cache performance stats
+- Cache recent decisions (TTL: 1 hour)
+- Cache market insights (TTL: 5 minutes)
+- Cache performance stats (TTL: 15 minutes)
+
+**Note:** When deployed with moha-bot, Maven uses moha_redis DB 1 to keep data separate from moha-bot (DB 0).
 
 #### 7.2 Create Email Client
 File: `utils/email_client.py`

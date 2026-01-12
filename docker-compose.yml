@@ -62,6 +62,7 @@ services:
       # Redis
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - REDIS_DB=${REDIS_DB:-0}
       # Maven specifics
       - EMAIL_API_SECRET=${EMAIL_API_SECRET}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}

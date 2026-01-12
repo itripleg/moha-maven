@@ -1,0 +1,34 @@
+# Docker Compose Override for Integration with moha-bot
+#
+# Use this configuration when running Maven alongside moha-bot to share
+# infrastructure (Redis, potentially PostgreSQL in the future).
+#
+# Usage:
+#   docker-compose -f docker-compose.yml -f docker-compose.moha-bot.yml up
+
+version: '3.8'
+
+services:
+  # Remove local redis, use moha-bot's moha_redis instead
+  redis:
+    profiles:
+      - disabled
+
+  maven:
+    networks:
+      - maven_net
+      - moha-bot_moha_net  # Connect to moha-bot network
+    environment:
+      # Use moha-bot's Redis instance
+      - REDIS_HOST=moha_redis
+      - REDIS_PORT=6379
+      - REDIS_DB=1  # Use DB 1 to separate from moha-bot (which uses DB 0)
+    depends_on:
+      postgres:
+        condition: service_healthy
+      # No redis dependency - using external moha_redis
+
+networks:
+  # Connect to moha-bot's network to access moha_redis
+  moha-bot_moha_net:
+    external: true

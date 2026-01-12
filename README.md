@@ -25,11 +25,42 @@ Maven runs as a containerized service with:
 
 See `AUTOCLAUDE_TASK.md` for the complete build specification.
 
+## Deployment Modes
+
+### Standalone Mode (Default)
+Run Maven with its own Redis and PostgreSQL instances:
+```bash
+docker-compose up -d
+```
+
+### Integrated with moha-bot (Recommended)
+Share infrastructure with moha-bot (uses moha_redis):
+```bash
+# Start moha-bot first
+cd ../moha-bot
+docker-compose up -d
+
+# Start Maven connected to moha-bot network
+cd ../moha-maven
+docker-compose -f docker-compose.yml -f docker-compose.moha-bot.yml up -d
+```
+
+**Benefits:**
+- Shares moha_redis (uses DB 1 to keep Maven data separate)
+- Reduces container overhead
+- Easier cross-service communication
+- Maven can cache trading decisions in same Redis instance
+
 ## Integration
 
 Maven integrates with:
 - **moha-bot** - Autonomous trading bot backend (github.com/itripleg/moha-bot)
+  - Can share moha_redis for caching
+  - Backend can proxy Maven API requests
 - **motherhaven** - Web3 platform with DEX and email (github.com/itripleg/motherhaven → motherhaven.app)
+  - Email API for communications
+  - DEX for potential trading operations
+  - LLM-bot API for data ingestion
 
 ---
 

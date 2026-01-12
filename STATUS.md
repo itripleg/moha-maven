@@ -9,10 +9,11 @@
 
 ### Docker Infrastructure
 - ✅ `Dockerfile` - Python 3.11 with git, supervisor
-- ✅ `docker-compose.yml` - Maven + PostgreSQL + Redis
+- ✅ `docker-compose.yml` - Standalone mode (Maven + PostgreSQL + Redis)
+- ✅ `docker-compose.moha-bot.yml` - Integration mode (uses moha-bot's moha_redis)
 - ✅ `supervisord.conf` - Runs Flask API (5002) + MCP server (3100)
 - ✅ `requirements.txt` - All dependencies listed
-- ✅ `.env.example` - Environment configuration template
+- ✅ `.env.example` - Environment configuration template with Redis DB selection
 
 ### Project Structure
 ```
