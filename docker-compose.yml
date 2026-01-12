@@ -8,8 +8,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-maven_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-maven_password}
       POSTGRES_DB: ${POSTGRES_DB:-maven_data}
-    ports:
-      - "5432:5432"
+    # No ports exposed - only accessible from maven container via maven_net
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -24,8 +23,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: maven_redis
-    ports:
-      - "6379:6379"
+    # No ports exposed - only accessible from maven container via maven_net
     networks:
       - maven_net
     healthcheck:
