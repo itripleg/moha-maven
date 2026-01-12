@@ -27,6 +27,20 @@ See `AUTOCLAUDE_TASK.md` for the complete build specification.
 
 ## Quick Start
 
+### PowerShell Quick Access (Windows)
+Add `maven` command to PowerShell for instant access from anywhere:
+```powershell
+# One-time setup
+cd moha-maven
+.\setup-maven-command.ps1
+
+# Now you can use 'maven' from anywhere!
+maven              # Chat with Maven
+maven status       # Container status
+maven logs         # Follow logs
+maven help         # Show all commands
+```
+
 ### Standalone Mode (Default)
 Run Maven with its own Redis and PostgreSQL instances:
 ```bash
@@ -35,6 +49,7 @@ docker-compose up -d
 
 # Chat with Maven
 docker exec -it maven python -m claude.interactive
+# Or use PowerShell shortcut: maven
 
 # Check health
 curl http://localhost:5002/health
