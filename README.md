@@ -2,12 +2,43 @@
 
 Maven is the autonomous CFO for the Mother Haven ecosystem, living as an independent service with full MCP (Model Context Protocol) capabilities.
 
-## Quick Start - Talk to Maven
+## Quick Start - First Time Setup
+
+**One-command setup (Recommended):**
 
 ```powershell
-# Just run claude in this directory - Maven is automatically active!
+# PowerShell
+git clone <repo-url>
 cd moha-maven
-claude
+.\setup.ps1
+```
+
+```bash
+# Linux/Mac
+git clone <repo-url>
+cd moha-maven
+chmod +x setup.sh
+./setup.sh
+```
+
+**Manual setup (3 steps):**
+
+```bash
+# 1. Copy Claude settings
+cp .claude_settings.json.example .claude_settings.json
+
+# 2. Start Docker containers
+docker-compose up -d
+
+# 3. Register MCP server
+claude mcp add maven docker exec -i maven python -m maven_mcp.server
+```
+
+**Then just talk to Maven:**
+
+```bash
+cd moha-maven
+claude  # Maven is automatically active!
 ```
 
 Maven will greet you as your CFO with full personality and memory access.
