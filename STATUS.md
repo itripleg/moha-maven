@@ -33,52 +33,66 @@ moha-maven/
 
 ---
 
-## Waiting For: MCP Server from moha-bot worktree 080 🍳
+## MCP Server Complete ✅
 
-**Status:** Auto-claude is currently building in `moha-bot/.auto-claude/worktrees/tasks/080-complete-maven-mcp-server-implementation`
+**Source:** Copied from `moha-bot/services/maven_mcp` @ be6fa89
 
-**What we need from 080:**
+**Files (3,268 lines):**
 ```
 mcp/
-├── __init__.py
-├── config.py        - MCP paths and server config
-├── resources.py     - 6 MCP resources (identity, personality, memory, decisions, milestones, infrastructure)
-├── server.py        - MCP server entry point (FastMCP)
-├── tools.py         - 7 MCP tools (log_event, update_identity, record_decision, create_milestone,
-│                                   get_stats, query_email, send_email)
+├── __init__.py          ✅ Package init
+├── config.py            ✅ MCP paths and server config (74 lines)
+├── resources.py         ✅ 6 MCP resources (271 lines)
+├── server.py            ✅ FastMCP server entry point (125 lines)
+├── tools.py             ✅ 7 MCP tools (1,205 lines)
+├── README.md            ✅ Documentation (280 lines)
 └── tests/
-    ├── __init__.py
-    ├── test_resources.py - Resource tests
-    └── test_tools.py     - Tool tests (568 lines)
+    ├── __init__.py      ✅
+    ├── test_resources.py ✅ Resource tests (339 lines, 20 tests passing)
+    └── test_tools.py     ✅ Tool tests (968 lines, 46 tests passing)
 ```
 
-**Progress:**
-- server.py (126 lines) ✅
-- All 7 tools implemented ✅
-- test_tools.py (568 lines) ✅
-- Still cooking... 🍳
+**Resources:**
+1. `maven://identity` - Maven's identity and stats
+2. `maven://personality` - Communication style and values
+3. `maven://memory` - Session log and event history
+4. `maven://decisions/recent` - Last 10 trading decisions
+5. `maven://milestones` - Achievement records
+6. `maven://infrastructure` - Motherhaven platform knowledge
+
+**Tools:**
+1. `maven_log_event` - Append to session log
+2. `maven_update_identity` - Update identity.json
+3. `maven_record_decision` - Create decision records
+4. `maven_create_milestone` - Record achievements
+5. `maven_get_stats` - Query performance data
+6. `maven_query_email` - Read maven@motherhaven.app inbox
+7. `maven_send_email` - Send emails to Boss or others
+
+**Tests:** 66/66 passing in moha-bot 🎉
 
 ---
 
-## Waiting For: Maven Data Files from moha-bot
+## Maven Data Files Copied ✅
 
-**Source:** `moha-bot/.moha/maven/`
+**Source:** Copied from `moha-bot/.moha/maven/`
 
-**Files to copy:**
+**Files (in .gitignore, not tracked):**
 ```
 .moha/maven/
-├── identity.json           - Maven's identity and stats
-├── infrastructure.json     - Motherhaven platform knowledge
-├── session_log.md          - Event history
+├── identity.json           ✅ Maven's identity and stats (2.2KB)
+├── infrastructure.json     ✅ Motherhaven platform knowledge (6.6KB)
+├── session_log.md          ✅ Event history (7.8KB)
+├── TECHNICAL_README.md     ✅ Documentation (10.9KB)
 ├── personas/
-│   └── maven-v1.md        - Personality definition
-├── decisions/
-│   └── *.md               - Decision records
-└── milestones/
-    └── *.md               - Achievement records
+│   └── maven-v1.md        ✅ Personality definition
+├── decisions/              ✅ Decision records directory
+├── milestones/             ✅ Achievement records directory
+├── conversations/          ✅ Conversation exports
+└── strategies/             ✅ Trading strategies
 ```
 
-**Note:** These are git-tracked persistence files, need to copy once MCP is ready.
+**Note:** Maven data persists in `.moha/maven/` (git-first persistence), but is in .gitignore to avoid bloating the repo. Each deployment mounts its own Maven data directory.
 
 ---
 
@@ -96,30 +110,18 @@ mcp/
 
 ---
 
-## Next Steps (Once 080 Finishes)
+## Next Steps
 
-### 1. Copy MCP Server
-```bash
-# From moha-bot worktree 080
-cp -r .auto-claude/worktrees/tasks/080-complete-maven-mcp-server-implementation/services/maven_mcp/* \
-      moha-maven/mcp/
-```
+### 1. Migrate Core Logic from moha-bot
+Auto-claude task to:
+- Copy `maven_core.py` → `core/decision_engine.py`
+- Copy `maven_git.py` → `core/git_persistence.py`
+- Copy `maven_spawn.py` → `core/twin_spawner.py`
+- Adapt `routes/maven_routes.py` → `routes/decision_routes.py` + `routes/status_routes.py`
+- Migrate database modules (5 files)
+- Copy `maven_tables.sql` → `database/schemas/maven_tables.sql`
 
-### 2. Copy Maven Data
-```bash
-# From moha-bot main repo
-cp -r .moha/maven/* moha-maven/.moha/maven/
-```
-
-### 3. Migrate Core Logic
-Use auto-claude to:
-- Copy maven_core.py → core/decision_engine.py
-- Copy maven_git.py → core/git_persistence.py
-- Copy maven_spawn.py → core/twin_spawner.py
-- Adapt routes from moha-bot backend
-- Migrate database modules
-
-### 4. Create Missing Files
+### 2. Build Missing Infrastructure
 Auto-claude needs to build:
 - `app.py` - Flask API entry point
 - `routes/decision_routes.py` - Decision endpoints
@@ -130,11 +132,23 @@ Auto-claude needs to build:
 - `utils/redis_cache.py` - Redis caching
 - `utils/email_client.py` - Motherhaven email API client
 
-### 5. Test Build
+### 3. Test Build
 ```bash
 cd moha-maven
+
+# Build containers
 docker-compose build
+
+# Start standalone (or use docker-compose.moha-bot.yml to share moha_redis)
 docker-compose up -d
+
+# Check health
+curl http://localhost:5002/health
+
+# Run MCP tests
+docker exec maven python -m pytest mcp/tests/ -v
+
+# Interactive CLI with Maven
 docker exec -it maven python -m claude.interactive
 ```
 
@@ -152,4 +166,21 @@ The repository is ready for auto-claude to work in. `AUTOCLAUDE_TASK.md` contain
 
 ---
 
-💎 Waiting for worktree 080 to finish cooking! 🍳
+## Current State Summary
+
+✅ **Complete:**
+- Docker infrastructure (Dockerfile, docker-compose.yml, supervisord.conf)
+- MCP server (3,268 lines - server, resources, tools, tests)
+- Maven data files (.moha/maven/ copied locally)
+- Redis integration (standalone + moha-bot modes)
+- Project structure (routes, core, database, claude, utils directories)
+- Complete AUTOCLAUDE_TASK.md specification
+
+❌ **Remaining:**
+- Flask API (app.py + route blueprints)
+- Core logic migration (decision_engine, git_persistence, twin_spawner)
+- Database modules (connection pooling + 5 Maven tables)
+- Interactive Claude CLI (maven_session.py, interactive.py)
+- Utilities (redis_cache.py, email_client.py)
+
+**Ready for auto-claude to build the remaining Flask API and service logic!** 💎🚀
