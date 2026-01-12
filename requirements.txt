@@ -1,0 +1,32 @@
+# Flask API
+Flask>=3.0.0
+flask-cors>=4.0.0
+
+# Database
+psycopg2-binary>=2.9.0
+
+# Cache
+redis>=5.0.0
+
+# MCP Server
+mcp>=0.9.0
+
+# Email & HTTP
+requests>=2.31.0
+
+# Git operations
+GitPython>=3.1.0
+
+# Anthropic (Claude)
+anthropic>=0.15.0
+
+# Utilities
+python-dotenv>=1.0.0
+prompt-toolkit>=3.0.0
+
+# Process management
+supervisor>=4.2.0
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0

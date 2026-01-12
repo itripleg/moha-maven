@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: maven_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-maven_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-maven_password}
+      POSTGRES_DB: ${POSTGRES_DB:-maven_data}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - maven_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-maven_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+  redis:
+    image: redis:7-alpine
+    container_name: maven_redis
+    ports:
+      - "6379:6379"
+    networks:
+      - maven_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: always
+
+  maven:
+    build: .
+    container_name: maven
+    ports:
+      - "3100:3100"  # MCP server
+      - "5002:5002"  # Flask API
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - maven_net
+    volumes:
+      - ./.moha/maven:/app/.moha/maven  # Git-first persistence
+      - ./.git:/app/.git                # Git repository (for commits)
+      - ./:/app:delegated               # Live code sync (development)
+    environment:
+      # Database
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${POSTGRES_USER:-maven_user}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-maven_password}
+      - DB_NAME=${POSTGRES_DB:-maven_data}
+      # Redis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      # Maven specifics
+      - EMAIL_API_SECRET=${EMAIL_API_SECRET}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - CLAUDE_CODE_OAUTH_TOKEN=${CLAUDE_CODE_OAUTH_TOKEN}
+      - MAVEN_MCP_PORT=3100
+      - MAVEN_API_PORT=5002
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      # Git config
+      - GIT_AUTHOR_NAME=Maven CFO
+      - GIT_AUTHOR_EMAIL=maven@motherhaven.app
+      - GIT_COMMITTER_NAME=Maven CFO
+      - GIT_COMMITTER_EMAIL=maven@motherhaven.app
+    stdin_open: true
+    tty: true
+    restart: always
+
+networks:
+  maven_net:
+    driver: bridge
+
+volumes:
+  postgres_data:
