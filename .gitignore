@@ -59,6 +59,14 @@ supervisord.pid
 # Temporary files
 *.tmp
 .DS_Store
+tmpclaude-*
+nul
+
+# Maven history files
+.maven_history
+
+# Claude local settings (keep example, ignore local)
+.claude/settings.local.json
 
 # Auto Claude data directory
 .auto-claude/
