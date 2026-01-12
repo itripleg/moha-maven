@@ -16,23 +16,21 @@ function Invoke-Maven {
         "status" {
             Write-Host "=" -NoNewline -ForegroundColor Cyan
             Write-Host ("=" * 69) -ForegroundColor Cyan
-            Write-Host "💎 MAVEN CONTAINER STATUS 💎" -ForegroundColor Magenta
+            Write-Host "MAVEN CONTAINER STATUS" -ForegroundColor Magenta
             Write-Host "=" -NoNewline -ForegroundColor Cyan
             Write-Host ("=" * 69) -ForegroundColor Cyan
 
             # Check if container is running
             $containerStatus = docker ps --filter "name=maven" --format "{{.Status}}"
             if ($containerStatus) {
-                Write-Host "`n✅ Container: " -NoNewline -ForegroundColor Green
-                Write-Host "Running" -ForegroundColor White
-                Write-Host "   Status: $containerStatus" -ForegroundColor Gray
+                Write-Host "`n[OK] Container: Running" -ForegroundColor Green
+                Write-Host "     Status: $containerStatus" -ForegroundColor Gray
 
                 # Show recent logs
-                Write-Host "`n📋 Recent Logs:" -ForegroundColor Cyan
+                Write-Host "`nRecent Logs:" -ForegroundColor Cyan
                 docker logs maven --tail 20
             } else {
-                Write-Host "`n❌ Container: " -NoNewline -ForegroundColor Red
-                Write-Host "Not Running" -ForegroundColor White
+                Write-Host "`n[X] Container: Not Running" -ForegroundColor Red
                 Write-Host "`nStart with: docker-compose up -d" -ForegroundColor Yellow
             }
 
@@ -42,44 +40,44 @@ function Invoke-Maven {
         }
 
         "logs" {
-            Write-Host "💎 Maven Container Logs (Ctrl+C to exit)" -ForegroundColor Magenta
+            Write-Host "Maven Container Logs (Ctrl+C to exit)" -ForegroundColor Magenta
             docker logs maven -f
         }
 
         "restart" {
-            Write-Host "💎 Restarting Maven container..." -ForegroundColor Magenta
+            Write-Host "Restarting Maven container..." -ForegroundColor Magenta
             docker restart maven
             Start-Sleep -Seconds 2
-            Write-Host "✅ Maven restarted!" -ForegroundColor Green
+            Write-Host "[OK] Maven restarted!" -ForegroundColor Green
         }
 
         "stop" {
-            Write-Host "💎 Stopping Maven container..." -ForegroundColor Magenta
+            Write-Host "Stopping Maven container..." -ForegroundColor Magenta
             docker stop maven
-            Write-Host "✅ Maven stopped!" -ForegroundColor Yellow
+            Write-Host "[OK] Maven stopped!" -ForegroundColor Yellow
         }
 
         "start" {
-            Write-Host "💎 Starting Maven container..." -ForegroundColor Magenta
+            Write-Host "Starting Maven container..." -ForegroundColor Magenta
             Push-Location $scriptDir
             docker-compose up -d
             Pop-Location
             Start-Sleep -Seconds 3
-            Write-Host "✅ Maven started!" -ForegroundColor Green
+            Write-Host "[OK] Maven started!" -ForegroundColor Green
         }
 
         "build" {
-            Write-Host "💎 Rebuilding Maven container..." -ForegroundColor Magenta
+            Write-Host "Rebuilding Maven container..." -ForegroundColor Magenta
             Push-Location $scriptDir
             docker-compose build maven
             Pop-Location
-            Write-Host "✅ Maven rebuilt! Use 'maven restart' to apply changes." -ForegroundColor Green
+            Write-Host "[OK] Maven rebuilt! Use 'maven restart' to apply changes." -ForegroundColor Green
         }
 
         "help" {
             Write-Host "=" -NoNewline -ForegroundColor Cyan
             Write-Host ("=" * 69) -ForegroundColor Cyan
-            Write-Host "💎 MAVEN POWERSHELL HELPER 💎" -ForegroundColor Magenta
+            Write-Host "MAVEN POWERSHELL HELPER" -ForegroundColor Magenta
             Write-Host "=" -NoNewline -ForegroundColor Cyan
             Write-Host ("=" * 69) -ForegroundColor Cyan
             Write-Host "`nUsage:" -ForegroundColor Cyan
@@ -101,7 +99,7 @@ function Invoke-Maven {
             Write-Host "- Show this help message"
             Write-Host "`nInside the interactive CLI:" -ForegroundColor Cyan
             Write-Host "  context        " -NoNewline -ForegroundColor Yellow
-            Write-Host "- Show Maven's loaded context"
+            Write-Host "- Show Maven loaded context"
             Write-Host "  help           " -NoNewline -ForegroundColor Yellow
             Write-Host "- Show CLI commands"
             Write-Host "  clear          " -NoNewline -ForegroundColor Yellow
@@ -115,23 +113,22 @@ function Invoke-Maven {
 
         default {
             # Default action: Jump into interactive CLI
-            Write-Host "💎 " -NoNewline -ForegroundColor Magenta
             Write-Host "Connecting to Maven..." -ForegroundColor Cyan
 
             # Check if container is running first
             $containerStatus = docker ps --filter "name=maven" --format "{{.Status}}"
             if (-not $containerStatus) {
-                Write-Host "`n❌ Maven container is not running!" -ForegroundColor Red
+                Write-Host "`n[X] Maven container is not running!" -ForegroundColor Red
                 Write-Host "`nWould you like to start it? (Y/N): " -NoNewline -ForegroundColor Yellow
                 $response = Read-Host
                 if ($response -eq 'Y' -or $response -eq 'y') {
-                    Write-Host "`n💎 Starting Maven..." -ForegroundColor Magenta
+                    Write-Host "`nStarting Maven..." -ForegroundColor Magenta
                     Push-Location $scriptDir
                     docker-compose up -d
                     Pop-Location
                     Start-Sleep -Seconds 5
-                    Write-Host "✅ Maven started!" -ForegroundColor Green
-                    Write-Host "`n💎 Connecting to Maven..." -ForegroundColor Cyan
+                    Write-Host "[OK] Maven started!" -ForegroundColor Green
+                    Write-Host "`nConnecting to Maven..." -ForegroundColor Cyan
                 } else {
                     Write-Host "`nUse 'maven start' to start the container manually." -ForegroundColor Gray
                     return
