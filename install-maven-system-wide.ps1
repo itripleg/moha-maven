@@ -83,5 +83,5 @@ Write-Host "- Show all commands"
 Write-Host ""
 
 Write-Host "Note: " -NoNewline -ForegroundColor Yellow
-Write-Host "Close and reopen your terminal if 'maven' doesn't work immediately." -ForegroundColor Gray
+Write-Host "Close and reopen your terminal if maven does not work immediately." -ForegroundColor Gray
 Write-Host ""
