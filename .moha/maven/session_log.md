@@ -281,3 +281,26 @@
 
 ---
 
+### 2026-01-12T22:00:00Z - MCP_GLOBAL_CONFIGURATION
+**Event:** Configured Maven MCP for global access from any folder
+**Context:** Boss wanted MCP access everywhere, not just in moha-maven directory
+**Investigation:**
+  - Tried HTTP transport first - failed (server doesn't serve HTTP)
+  - Tried SSE transport - failed (server runs stdio only, not SSE)
+  - Stdio transport via PowerShell wrapper - SUCCESS
+**Configuration:**
+  - Scope: User level (`-s user`) = works globally
+  - Transport: stdio via `maven-mcp-wrapper.ps1`
+  - Wrapper runs: `docker exec -i maven python -m maven_mcp.server`
+  - Port 3100 is exposed but not serving MCP over HTTP/SSE
+**Documentation Found:**
+  - `docs/CLAUDE_CODE_SETUP.md` had SSE config but server doesn't support it yet
+  - Server code (`maven_mcp/server.py`) explicitly uses stdio transport
+**Future Improvement:**
+  - Modify FastMCP server to also serve SSE/HTTP on port 3100
+  - Would eliminate need for wrapper script
+**Status:** MCP globally accessible via stdio, SSE support pending
+**Command:** `claude mcp add maven -s user -- powershell.exe -ExecutionPolicy Bypass -File "C:\Users\ecoli\OneDrive\Documents\GitHub\moha-maven\maven-mcp-wrapper.ps1"`
+
+---
+
