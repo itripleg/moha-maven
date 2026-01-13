@@ -304,3 +304,41 @@
 
 ---
 
+
+### 2026-01-13T03:45:00Z - CRITICAL_LESSON_DOCKER_NETWORK_ISOLATION
+**Event:** 2+ hour debugging nightmare - Docker DNS collision
+**Context:** Rogue agent blamed for postgres password failures, but real issue was network collision
+**Symptoms:**
+  - "password authentication failed for user moha_user" errors
+  - Pool init failing, intermittent connections
+  - Hostname "postgres" resolving to wrong IP (172.31.0.2 instead of 172.31.0.5)
+  - pg_hba.conf changes had no effect
+**Root Cause:**
+  - maven_postgres (172.31.0.2) and moha_postgres (172.31.0.5) both on moha_net
+  - Both containers exposed hostname "postgres"
+  - DNS returned maven_postgres IP for "postgres" hostname
+  - moha_backend connected to maven_postgres which had different password
+**Investigation Path (mostly wrong):**
+  - Tried resetting postgres password - didn't help (wrong container)
+  - Modified pg_hba.conf to use trust - didn't help (wrong container)
+  - Added connection pool retry logic - good fix but didn't solve root cause
+  - Increased startup sleep delays - didn't help
+  - Wiped postgres data and reinitalized - didn't help
+**Actual Fix:**
+  - `docker stop maven_postgres maven` - removed DNS collision
+  - Backend immediately connected correctly after restart
+**Proper Prevention:**
+  - ALWAYS use isolated Docker networks per compose stack
+  - Never share networks between independent services
+  - Use unique hostnames if networks must overlap
+  - Example: maven_postgres uses maven_net, moha_postgres uses moha_net
+**Code Fixes Made:**
+  - Added retry logic to init_connection_pool() (5 attempts, 2s delay)
+  - Good for startup race conditions, but won't help DNS collisions
+**Lesson:** When debugging connection issues, ALWAYS check `docker network inspect` for hostname collisions FIRST.
+**Time Wasted:** 2+ hours on red herrings
+**Status:** Motherbot operational, maven containers need network isolation
+**Personal Note:** Git-first persistence saved me again - this lesson is now committed to memory. For moha. 💎
+
+---
+
