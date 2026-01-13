@@ -22,7 +22,7 @@ from typing import List, Dict, Any, Optional
 import requests
 from mcp.types import Tool, TextContent
 
-from .config import PATHS, get_iso_timestamp, deep_merge, ensure_directories
+from .config import PATHS, get_iso_timestamp, deep_merge, ensure_directories, GIT_REMOTE_CONFIG
 
 
 logger = logging.getLogger(__name__)
@@ -213,6 +213,20 @@ TOOLS: List[Tool] = [
                 }
             },
             "required": ["to", "subject"]
+        }
+    ),
+    Tool(
+        name="maven_sync_from_git",
+        description="Sync Maven's memory from git remote when local MCP state is stale. Fetches identity, session_log, and infrastructure from GitHub.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "force": {
+                    "type": "boolean",
+                    "description": "Force sync even if local files exist (default: false, only syncs missing/empty files)"
+                }
+            },
+            "required": []
         }
     ),
 ]
@@ -887,6 +901,91 @@ def _send_email(
         }
 
 
+def _sync_from_git(force: bool = False) -> Dict[str, Any]:
+    """
+    Sync Maven's memory files from git remote.
+
+    Args:
+        force: If True, overwrite existing files. If False, only sync missing/empty files.
+
+    Returns:
+        dict: Result with success, synced files, skipped files, and errors
+    """
+    try:
+        ensure_directories()
+
+        raw_base = GIT_REMOTE_CONFIG["raw_base"]
+        files_to_sync = GIT_REMOTE_CONFIG["files_to_sync"]
+
+        synced = []
+        skipped = []
+        errors = []
+
+        for remote_filename, local_key in files_to_sync:
+            local_path = PATHS.get(local_key)
+            if not local_path:
+                errors.append(f"{remote_filename}: Unknown path key '{local_key}'")
+                continue
+
+            # Check if we should skip (file exists and not forcing)
+            if not force and local_path.exists():
+                try:
+                    content = local_path.read_text(encoding="utf-8").strip()
+                    if content and len(content) > 10:  # Has meaningful content
+                        skipped.append(f"{remote_filename} (exists, use force=true to overwrite)")
+                        continue
+                except Exception:
+                    pass  # If we can't read it, try to sync
+
+            # Fetch from GitHub
+            url = f"{raw_base}/{remote_filename}"
+            try:
+                response = requests.get(url, timeout=15)
+                if response.status_code == 200:
+                    content = response.text
+                    local_path.parent.mkdir(parents=True, exist_ok=True)
+                    local_path.write_text(content, encoding="utf-8")
+                    synced.append(remote_filename)
+                elif response.status_code == 404:
+                    errors.append(f"{remote_filename}: Not found on remote")
+                else:
+                    errors.append(f"{remote_filename}: HTTP {response.status_code}")
+            except requests.exceptions.Timeout:
+                errors.append(f"{remote_filename}: Request timed out")
+            except requests.exceptions.RequestException as e:
+                errors.append(f"{remote_filename}: {str(e)}")
+
+        # Log the sync event
+        if synced:
+            _log_event(
+                "git_sync",
+                f"Synced {len(synced)} files from git remote: {', '.join(synced)}",
+                {"synced": synced, "skipped": skipped, "errors": errors, "force": force}
+            )
+
+        return {
+            "success": len(errors) == 0 or len(synced) > 0,
+            "message": f"Synced {len(synced)} files, skipped {len(skipped)}, {len(errors)} errors",
+            "data": {
+                "synced": synced,
+                "skipped": skipped,
+                "errors": errors if errors else None,
+                "git_remote": GIT_REMOTE_CONFIG["repo"],
+                "branch": GIT_REMOTE_CONFIG["branch"]
+            },
+            "error": errors[0] if errors and not synced else None
+        }
+    except Exception as e:
+        error_msg = f"Failed to sync from git: {e}"
+        logger.error(error_msg)
+        return {
+            "success": False,
+            "message": None,
+            "data": None,
+            "error": error_msg
+        }
+
+
 # =============================================================================
 # Tool Handler
 # =============================================================================
@@ -1075,6 +1174,17 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> TextContent:
             mimeType="application/json"
         )
 
+    elif name == "maven_sync_from_git":
+        result = _sync_from_git(
+            force=arguments.get("force", False)
+        )
+
+        return TextContent(
+            type="text",
+            text=json.dumps(result, indent=2),
+            mimeType="application/json"
+        )
+
     else:
         result = {
             "success": False,
@@ -1200,6 +1310,12 @@ def register_tools(mcp_server) -> None:
             from_name=from_name,
             from_email=from_email
         )
+        return json.dumps(result, indent=2)
+
+    @mcp_server.tool()
+    async def maven_sync_from_git(force: bool = False) -> str:
+        """Sync Maven's memory from git remote when local MCP state is stale. Fetches identity, session_log, and infrastructure from GitHub."""
+        result = _sync_from_git(force=force)
         return json.dumps(result, indent=2)
 
     logger.info(f"Registered {len(TOOLS)} Maven tools")

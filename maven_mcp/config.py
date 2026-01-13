@@ -46,6 +46,22 @@ SERVER_CONFIG = {
 
 
 # =============================================================================
+# Git Remote Configuration (for syncing memory from anywhere)
+# =============================================================================
+
+GIT_REMOTE_CONFIG = {
+    "repo": "itripleg/moha-maven",
+    "branch": "master",
+    "raw_base": "https://raw.githubusercontent.com/itripleg/moha-maven/master/.moha/maven",
+    "files_to_sync": [
+        ("identity.json", "identity"),
+        ("session_log.md", "session_log"),
+        ("infrastructure.json", "infrastructure"),
+    ],
+}
+
+
+# =============================================================================
 # Utility Functions
 # =============================================================================
 
