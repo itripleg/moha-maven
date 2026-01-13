@@ -13,7 +13,8 @@ from pathlib import Path
 # =============================================================================
 
 # Base directory for Maven data - defaults to project root's .moha/maven/
-_base_dir = os.getenv('MAVEN_BASE_DIR', str(Path(__file__).parent.parent.parent))
+# From maven_mcp/config.py: parent=maven_mcp, parent.parent=/app (project root)
+_base_dir = os.getenv('MAVEN_BASE_DIR', str(Path(__file__).parent.parent))
 MAVEN_DATA_DIR = Path(_base_dir) / ".moha" / "maven"
 
 
