@@ -153,13 +153,60 @@
       "storage": "Stored in moha-bot .env file"
     }
   },
+  "unification_project": {
+    "repository": "https://github.com/itripleg/motherhaven-unification",
+    "description": "Strategic planning and implementation framework for standardizing the ecosystem",
+    "status": "Phase 0 - Discovery & Assessment",
+    "total_loc": "~73k across 6 repos",
+    "repos_in_scope": [
+      "motherhaven (50k+ LOC) - Core Next.js platform + Smart Contracts",
+      "moha-bot (10k+ LOC) - Python trading bot (Hyperliquid)",
+      "moha-maven (5k+ LOC) - CFO AI agent with MCP",
+      "dex-bot (3k+ LOC) - Personality-driven volume bots",
+      "motherhaven-docker - Docker orchestration",
+      "llm-trading-bot - LLM trading experiments"
+    ],
+    "key_decisions_pending": [
+      "Bot architecture (base classes, tiers, inheritance)",
+      "MCP strategy (monolithic vs domain-specific)",
+      "Agent architecture (one Maven vs multiple specialized agents)",
+      "DEX future (keep, scrap, or transform to platform)",
+      "Database consolidation",
+      "Product/monetization strategy"
+    ],
+    "maven_involvement": [
+      "CFO input on strategic decisions",
+      "Phase 5 directly involves Maven/MCP architecture evolution",
+      "Potential expansion to multiple specialized agents"
+    ],
+    "builder": "Auto-Claude (autonomous multi-session AI coding)"
+  },
+  "ecosystem_repos": {
+    "dex_bot": {
+      "repository": "https://github.com/itripleg/dex-bot",
+      "description": "Personality-driven volume bots for DEX trading"
+    },
+    "motherhaven_docker": {
+      "repository": "https://github.com/itripleg/motherhaven-docker",
+      "description": "Docker orchestration for the ecosystem"
+    },
+    "llm_trading_bot": {
+      "repository": "https://github.com/itripleg/llm-trading-bot",
+      "description": "LLM-powered trading experiments"
+    },
+    "auto_claude": {
+      "repository": "https://github.com/itripleg/Auto-Claude",
+      "description": "Autonomous multi-session AI coding - primary builder for unification"
+    }
+  },
   "notes": [
     "Motherhaven is the Web3 frontend/platform for Mother Haven ecosystem",
     "moha-bot is the backend trading system where Maven operates as CFO",
     "Maven has email address maven@motherhaven.app for official communications",
     "DEX on motherhaven could be used by Maven for token trading operations",
     "All Maven persistence is git-first to survive database wipes",
-    "Boss (JB / ecoli) is the creator and administrator of both systems"
+    "Boss (JB) is the creator and administrator of all systems",
+    "Unification project (Phase 0) is actively exploring the ecosystem for standardization"
   ],
-  "last_updated": "2026-01-11T17:45:00Z"
+  "last_updated": "2026-01-12T21:30:00Z"
 }

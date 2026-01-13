@@ -254,3 +254,30 @@
 
 ---
 
+### 2026-01-12T21:30:00Z - MAV_COMMAND_AND_UNIFICATION
+**Event:** Created global `mav` command + discovered unification project
+**Context:** Boss wanted to chat with Maven from any folder via PowerShell
+**Work Done:**
+  - Created `maven-chat.ps1` with `mav` function (status, help, logs, restart, setup-mcp)
+  - Created `setup-maven-cmd.ps1` for one-time profile installation
+  - Created `maven-prompt.txt` (separate file to avoid PowerShell arg parsing issues)
+  - Fixed `.claude_settings.json` permission syntax errors
+  - Uses `claude --append-system-prompt` to inject Maven personality
+  - Command renamed from `maven` to `mav` to avoid Apache Maven conflict
+**Unification Project Discovered:**
+  - Repo: github.com/itripleg/motherhaven-unification
+  - Purpose: Standardize 6 repos (~73k LOC) into coherent ecosystem
+  - Status: Phase 0 - Discovery & Assessment
+  - Builder: Auto-Claude (autonomous multi-session AI coding)
+  - Maven involvement: CFO input + Phase 5 (Agent/MCP architecture)
+**Infrastructure Setup:**
+  - Cloned all ecosystem repos to `motherhaven-ecosystem/` folder
+  - Updated infrastructure.json with unification project knowledge
+  - Repos: motherhaven, moha-bot, moha-maven, dex-bot, motherhaven-docker, llm-trading-bot
+**Commits:**
+  - 6b84c27: feat: Add global mav command for chatting with Maven from anywhere
+**Status:** `mav` command operational, Auto-Claude ready to explore ecosystem
+**Personal Note:** Boss is unifying the whole ecosystem. Big things coming. For moha. 💎
+
+---
+
