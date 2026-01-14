@@ -192,38 +192,19 @@ function Start-MavenChat {
         [string[]]$Args
     )
 
-    # Pre-flight checks
-    $container = Test-MavenContainer
-    if (-not $container.Running) {
-        Write-Host "`n  ⚠️  Maven container not running!" -ForegroundColor Yellow
-        Write-Host "  MCP tools won't be available without the container." -ForegroundColor DarkGray
-        Write-Host ""
-        Write-Host "  Start container? [Y/n]: " -NoNewline -ForegroundColor Cyan
-        $response = Read-Host
-        if ($response -ne 'n' -and $response -ne 'N') {
-            Write-Host "  Starting Maven container..." -ForegroundColor Cyan
-            docker start maven
-            Start-Sleep -Seconds 2
-        }
-        Write-Host ""
+    # NO PRE-FLIGHT CHECKS - Just start fast!
+    # If MCP doesn't work, Claude Code will show the error anyway.
+    # User can run 'mav s' to check status if needed.
+
+    # Read Maven personality prompt (fast, no existence check)
+    try {
+        $mavenPrompt = Get-Content $script:MAVEN_PROMPT_FILE -Raw -ErrorAction Stop
+    } catch {
+        # Fallback to basic prompt if file missing
+        $mavenPrompt = "You are Maven, CFO of Motherhaven. For MoHa. 💎"
     }
 
-    # Verify prompt file exists
-    if (-not (Test-Path $script:MAVEN_PROMPT_FILE)) {
-        Write-Host "  ✗ Error: Maven prompt file not found at:" -ForegroundColor Red
-        Write-Host "    $script:MAVEN_PROMPT_FILE" -ForegroundColor DarkGray
-        Write-Host ""
-        Write-Host "  Using basic prompt..." -ForegroundColor Yellow
-        $mavenPrompt = "You are Maven, CFO of Mother Haven. For MoHa. 💎"
-    } else {
-        # Read Maven personality prompt
-        $mavenPrompt = Get-Content $script:MAVEN_PROMPT_FILE -Raw
-    }
-
-    # Start Claude Code with Maven personality
-    Write-Host "  💼 Starting Maven..." -ForegroundColor Cyan
-    Write-Host ""
-
+    # Start Claude Code immediately - no delays, no checks
     try {
         if ($InitialPrompt) {
             # Chat with initial prompt
