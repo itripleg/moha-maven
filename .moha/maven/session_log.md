@@ -357,3 +357,11 @@ Created comprehensive auto-claude specification for complete Maven operational i
 **Metadata:** {"file": "AUTO_CLAUDE_PROMPT.md", "priorities": 5, "scripts_to_create": 6, "mcp_resources_to_add": 3, "integration_points": ["moha_postgres", "hyperliquid_api", "redis_cache"]}
 
 ---
+
+## [2026-01-14T14:49:41.645444+00:00] GIT_MAINTENANCE
+
+Cleaned moha-maven repo for auto-claude. Removed temp files (tmpclaude-*, supervisord.log, __pycache__). Created organized .auto-claude-prompts/ directory with: (1) 01_complete_maven_infrastructure.md - comprehensive prompt for 5 priorities, (2) MCP_CONTEXT.md - complete MCP server reference for AC, (3) README.md - prompt organization guide. Resolved git conflicts (identity.json rebirth_count 2→4, session_log.md merge). Committed and pushed to master (e328d03). Repo clean, ready for AC autonomous work.
+
+**Metadata:** {"commit": "e328d03", "files_cleaned": ["tmpclaude-*", "supervisord.log", "__pycache__"], "prompts_created": 3, "conflicts_resolved": 2, "status": "ready_for_auto_claude"}
+
+---
