@@ -24,6 +24,14 @@ from mcp.types import Tool, TextContent
 
 from .config import PATHS, get_iso_timestamp, deep_merge, ensure_directories, GIT_REMOTE_CONFIG
 
+# Database imports for dual persistence
+try:
+    from database.connection import get_db_connection
+    DB_AVAILABLE = True
+except ImportError:
+    DB_AVAILABLE = False
+    logging.warning("Database connection not available - will only persist to git")
+
 
 logger = logging.getLogger(__name__)
 
@@ -238,7 +246,10 @@ TOOLS: List[Tool] = [
 
 def _log_event(event_type: str, content: str, metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
-    Append an event to the session log.
+    Append an event to the session log AND database (dual persistence).
+
+    Git-first: The session_log.md file is the source of truth.
+    Database: For queryability and searchability.
 
     Args:
         event_type: Type of event
@@ -259,7 +270,7 @@ def _log_event(event_type: str, content: str, metadata: Optional[Dict[str, Any]]
 
         log_entry += "\n---\n"
 
-        # Append to session log
+        # 1. GIT-FIRST: Append to session log (source of truth)
         session_log = PATHS["session_log"]
         mode = "a" if session_log.exists() else "w"
 
@@ -270,9 +281,35 @@ def _log_event(event_type: str, content: str, metadata: Optional[Dict[str, Any]]
         with open(session_log, mode, encoding="utf-8") as f:
             f.write(log_entry)
 
+        # 2. POSTGRES: Write to maven_memory for queryability
+        db_id = None
+        db_error = None
+        if DB_AVAILABLE:
+            try:
+                with get_db_connection() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("""
+                        INSERT INTO maven_memory (
+                            event_type, description, metadata
+                        ) VALUES (%s, %s, %s)
+                        RETURNING id
+                    """, (
+                        event_type, content,
+                        json.dumps(metadata) if metadata else '{}'
+                    ))
+                    db_id = cursor.fetchone()[0]
+                    cursor.close()
+                    logger.info(f"Event logged to database: id={db_id}")
+            except Exception as e:
+                db_error = str(e)
+                logger.warning(f"Failed to write event to database: {e}")
+                # Non-fatal: git is source of truth
+
         return {
             "success": True,
             "message": f"Logged {event_type} event at {timestamp}",
+            "db_id": db_id,
+            "db_persisted": db_id is not None,
             "error": None
         }
     except Exception as e:
@@ -352,7 +389,10 @@ def _record_decision(
     metadata: Optional[Dict[str, Any]] = None
 ) -> Dict[str, Any]:
     """
-    Record a decision in the decisions directory and update identity counter.
+    Record a decision in the decisions directory AND database (dual persistence).
+
+    Git-first: The markdown file is the source of truth.
+    Database: For queryability and analytics.
 
     Args:
         decision_type: Type of decision (buy, sell, hold, etc.)
@@ -394,12 +434,39 @@ def _record_decision(
 
         content += f"\n---\n*Recorded by Maven*\n"
 
-        # Write decision file
+        # 1. GIT-FIRST: Write decision file (source of truth)
         with open(decision_file, "w", encoding="utf-8") as f:
             f.write(content)
 
-        # Update identity counter
+        # 2. Update identity counter
         identity_result = _update_identity({"total_decisions": _get_current_decision_count() + 1})
+
+        # 3. POSTGRES: Write to database for queryability
+        db_id = None
+        db_error = None
+        if DB_AVAILABLE:
+            try:
+                with get_db_connection() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("""
+                        INSERT INTO maven_decisions (
+                            git_filename, decision_type, asset, action, reasoning,
+                            confidence, risk_level, metadata, decided_at
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        RETURNING id
+                    """, (
+                        filename, decision_type, asset, action, reasoning,
+                        confidence, risk_level,
+                        json.dumps(metadata) if metadata else '{}',
+                        timestamp
+                    ))
+                    db_id = cursor.fetchone()[0]
+                    cursor.close()
+                    logger.info(f"Decision recorded to database: id={db_id}")
+            except Exception as e:
+                db_error = str(e)
+                logger.warning(f"Failed to write decision to database: {e}")
+                # Non-fatal: git is source of truth
 
         return {
             "success": True,
@@ -409,7 +476,10 @@ def _record_decision(
                 "decision_type": decision_type,
                 "confidence": confidence,
                 "risk_level": risk_level,
-                "total_decisions": identity_result.get("data", {}).get("total_decisions", 0)
+                "total_decisions": identity_result.get("data", {}).get("total_decisions", 0),
+                "db_id": db_id,
+                "db_persisted": db_id is not None,
+                "db_error": db_error
             },
             "error": None
         }

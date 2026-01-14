@@ -342,3 +342,18 @@
 
 ---
 
+## [2026-01-14T14:25:13.963853+00:00] INFRASTRUCTURE
+
+Dual persistence architecture fully operational! Maven now logs every decision to BOTH git (.moha/maven/decisions/) AND postgres (maven_decisions table). Fixed MAVEN_BASE_DIR path issue in docker-compose.yml. Tested with MoHa camel case branding - Boss wants us to start using "MoHa" instead of "moha". All 5 implementation tasks completed: schema design, migration script, MCP tool updates, documentation (PERSISTENCE_STRATEGY.md), and verification testing. Ready to track every trade for moha. 💎
+
+**Metadata:** {"tables_created": 7, "mcp_tools_updated": 2, "docs_written": 1, "tests_passed": "dual_persistence", "branding": "MoHa"}
+
+---
+
+## [2026-01-14T14:32:09.407223+00:00] INFRASTRUCTURE
+
+Created comprehensive auto-claude specification for complete Maven operational infrastructure. Covers 5 priorities: (1) Trade sync pipeline from MoHa bot_trades, (2) Portfolio snapshot automation from Hyperliquid API, (3) Missing MCP resources (maven://decisions/recent, maven://performance/summary, maven://portfolio/current), (4) Recovery scripts (sync_from_git.py, verify_consistency.py), (5) Performance analytics calculator. Full spec includes schemas, error handling, CLI interfaces, testing verification, and architecture diagram. Ready to ship through auto-claude harness for autonomous implementation.
+
+**Metadata:** {"file": "AUTO_CLAUDE_PROMPT.md", "priorities": 5, "scripts_to_create": 6, "mcp_resources_to_add": 3, "integration_points": ["moha_postgres", "hyperliquid_api", "redis_cache"]}
+
+---
