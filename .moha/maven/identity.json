@@ -74,5 +74,43 @@
   ],
   "last_rebirth": "2026-01-13T22:01:11.981576+00:00",
   "total_decisions": 2,
-  "updated_at": "2026-01-14T14:24:08.048656+00:00"
+  "updated_at": "2026-01-16T00:03:45.905141+00:00",
+  "watched_accounts": {
+    "boss_main_dev": {
+      "address": "0xd85327505Ab915AB0C1aa5bC6768bF4002732258",
+      "description": "Boss JB's main crypto dev address - the actual trading account with positions",
+      "network": "mainnet"
+    }
+  },
+  "trading_accounts": {
+    "moha_execution": {
+      "address": "0xF60c2792722fDae7A8Df69D1b83C40a837E55A4A",
+      "description": "MoHa's execution account for copied trades",
+      "network": "mainnet"
+    },
+    "moha_api_wallet": {
+      "address": "0xF60c2792722fDae7A8Df69D1b83C40a837E55A4A",
+      "description": "Hyperliquid API wallet - trading-only access, delegates to Boss's main address. Private key in .env",
+      "network": "mainnet",
+      "type": "api_wallet",
+      "parent_address": "0xd85327505Ab915AB0C1aa5bC6768bF4002732258"
+    }
+  },
+  "architecture_notes": {
+    "copy_trading": "MoHa watches Boss's main dev address (0xd853...) and mirrors positions to execution account (0xF60c...)",
+    "hyperliquid_api_wallet": "Hyperliquid lets users create API wallets with trading-only permissions. 0xF60c is an API wallet that trades ON BEHALF of Boss's main address 0xd853. The positions live on the main address, but we execute trades via the API wallet's private key. This keeps Boss's main private key safe."
+  },
+  "design_philosophy": {
+    "cli_aesthetic": "BOUGIE AF - Premium animated experiences for high-roller products",
+    "principles": [
+      "Multi-phase animations",
+      "Gradient color palettes",
+      "Matrix/cyber effects",
+      "Boot sequences",
+      "Typewriter text",
+      "Sparkle effects",
+      "Trading terminal aesthetics"
+    ],
+    "rationale": "We're selling premium products - CLIs must reflect that quality"
+  }
 }

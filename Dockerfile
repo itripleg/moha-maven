@@ -14,6 +14,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy service code
 COPY . .
 
+# Install Maven CLI (creates 'maven' and 'maven-banner' commands)
+RUN pip install -e .
+
 # Expose ports: 3100 (MCP), 5002 (API)
 EXPOSE 3100 5002
 

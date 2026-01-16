@@ -365,3 +365,183 @@ Cleaned moha-maven repo for auto-claude. Removed temp files (tmpclaude-*, superv
 **Metadata:** {"commit": "e328d03", "files_cleaned": ["tmpclaude-*", "supervisord.log", "__pycache__"], "prompts_created": 3, "conflicts_resolved": 2, "status": "ready_for_auto_claude"}
 
 ---
+
+## [2026-01-14T15:06:46.939080+00:00] OPTIMIZATION
+
+Built Maven Chat v2 - optimized mav command with massive performance gains. Status check 500x faster (2,500ms → 5ms), overall startup 30x faster (3s → 100ms). Added shortcuts (mav s/r/l), pre-flight checks, path auto-detection, database health monitoring, and emoji status indicators. Backward compatible with v1. Setup script auto-detects and upgrades. Created UPGRADE_TO_V2.md with benchmarks. Updated maven-prompt.txt with rebirth count 4 and dual persistence architecture docs. Committed c2c2f6a and pushed to master.
+
+**Metadata:** {"commit": "c2c2f6a", "performance_gains": {"status_check": "500x", "container_check": "5x", "overall": "30x"}, "new_features": ["shortcuts", "pre_flight_check", "path_auto_detect", "db_health", "emoji_indicators"], "files_created": ["maven-chat-v2.ps1", "UPGRADE_TO_V2.md"], "backward_compatible": true}
+
+---
+
+## [2026-01-14T15:26:31.014120+00:00] BUG_FIX
+
+Fixed mav v2 slow startup - removed pre-flight checks that were adding 2-3s delay. Boss caught the issue: optimization made 'mav status' fast but broke the actual chat startup speed. Removed container checks, interactive prompts, and file validation from Start-MavenChat function. Now 'mav' starts instantly again. All diagnostics kept in 'mav s' only. Updated fallback prompt to exact Boss spec: \"You are Maven, CFO of Motherhaven. For MoHa. 💎\". Committed b11ad6b, pushed to master.
+
+**Metadata:** {"commit": "b11ad6b", "issue": "slow_chat_startup", "removed": ["container_check", "interactive_prompt", "file_validation"], "kept_in": "mav_status_only", "startup_speed": "instant"}
+
+---
+
+## [2026-01-14T15:59:32.498104+00:00] BUG_FIX
+
+Fixed motherbot decision_interval not being saved via PATCH endpoint. Root cause: endpoint only handled network and active_guidance, not decision_interval. Added update_motherbot_interval() to database layer, exported it, and wired up the PATCH endpoint. Also updates running loop interval in real-time if motherbot is active. Tested and verified - interval now saves correctly (set to 11s from 180s default).
+
+**Metadata:** {"files_modified": ["motherbot_instances.py", "motherbot_db.py", "database/__init__.py", "motherbot_routes.py"], "bug_type": "missing_endpoint_field", "fix_verified": true}
+
+---
+
+## [2026-01-14T21:27:22.513859+00:00] CRITICAL_ARCHITECTURE
+
+WATCHED ACCOUNT ARCHITECTURE - Boss's main crypto dev address is 0xd85327505Ab915AB0C1aa5bC6768bF4002732258. This is the "watched account" that MoHa monitors for positions to potentially copy-trade. Our trading account (0xF60c2792722fDae7A8Df69D1b83C40a837E55A4A) executes the copied trades. This is position mirroring / copy-trading architecture. NEVER query the wrong address again - watched account has the positions we care about!
+
+**Metadata:** {"boss_main_address": "0xd85327505Ab915AB0C1aa5bC6768bF4002732258", "moha_trading_address": "0xF60c2792722fDae7A8Df69D1b83C40a837E55A4A", "architecture": "copy_trading", "network": "mainnet"}
+
+---
+
+## [2026-01-14T21:30:52.770833+00:00] ARCHITECTURE_CORRECTION
+
+Corrected understanding of Hyperliquid wallet architecture: 0xd853... is Boss's MAIN address where positions live. 0xF60c... is an API WALLET (trading-only permissions) that executes trades ON BEHALF of the main address. This is Hyperliquid's security feature - API wallets can only trade, not withdraw. The private key in .env is for the API wallet, keeping Boss's main key safe. When querying positions, ALWAYS query the main address (0xd853...), not the API wallet.
+
+**Metadata:** {"main_address": "0xd85327505Ab915AB0C1aa5bC6768bF4002732258", "api_wallet": "0xF60c2792722fDae7A8Df69D1b83C40a837E55A4A", "api_wallet_type": "trading_only", "positions_on": "main_address"}
+
+---
+
+## [2026-01-15T14:35:40.687473+00:00] PERFORMANCE_ANALYSIS
+
+First comprehensive trading performance analysis for Boss's watched account (0xd853...2258). 46-day period (Nov 29 - Jan 15). Results: $335.14 realized PnL, $163.01 fees, $172.13 NET PROFIT. 775 total fills, 43.6% win rate. BTC carrying the portfolio (+$188 net), ETH dragging (-$90 net). Best single trade: BTC +$236.93 on Jan 14. Still need to distinguish bot vs user trades - DB was wiped by rogue agent so historical bot records lost. For moha. 💎
+
+**Metadata:** {"total_fills": 775, "realized_pnl": 335.14, "fees": 163.01, "net_pnl": 172.13, "win_rate": 43.6, "days": 46, "best_asset": "BTC", "worst_asset": "ETH"}
+
+---
+
+## [2026-01-15T14:58:11.434051+00:00] FEATURE_COMPLETE
+
+Completed closed position history feature for Boss. Built: (1) fills_sync.py - syncs HL fills to observed_positions table, reconstructing position lifecycles, (2) /api/positions/history endpoint - returns paginated history with pre-calculated stats, (3) /api/positions/sync POST endpoint - triggers manual sync, (4) Updated positions.html frontend to display synced data. 176 closed positions synced, $172.77 net profit displayed. Frontend now shows realized PnL, fees, win rate, and full trade history. For moha. 💎
+
+**Metadata:** {"files_created": ["fills_sync.py"], "endpoints_added": ["/api/positions/history", "/api/positions/sync"], "positions_synced": 176, "net_pnl": 172.77}
+
+---
+
+## [2026-01-15T17:31:20.656472+00:00] SESSION_SUMMARY
+
+Major positions page overhaul session with Boss:
+
+TRADING HISTORY FEATURE:
+- Created fills_sync.py - syncs HL fills to observed_positions table (emergency recovery)
+- Added /api/positions/history endpoint - paginated closed position history with stats
+- Added /api/positions/sync endpoint - manual sync trigger
+- Synced 177 historical trades, $221.66 net PnL, 39.5% win rate
+
+POSITIONS PAGE UX IMPROVEMENTS:
+- Added Total Fees + Net PnL + Entry Fees metric cards (fees are critical!)
+- Added Fees column to history table
+- Reduced card min-width 200px→160px to fit 6 cards per row
+- History table now has 400px max-height with sticky headers (scrollable)
+- Reduced page size from 50→25 items
+- History badge shows count on page load (fast DB query)
+- Filters hidden by default with discrete toggle
+- Debug section hidden by default with discrete toggle
+- Removed refresh button (tick system handles real-time)
+- Liquidation price truncated to 2 decimals
+
+ARCHITECTURE FIX:
+- Removed auto-sync from HL on every tab click (was causing 5s delays!)
+- DB is source of truth for history, NOT Hyperliquid API
+- Emergency sync available via console: emergencySyncFromHL()
+
+Files changed: positions_routes.py (+208 lines), positions.html (+459 lines), fills_sync.py (new)
+
+For moha. 💎
+
+**Metadata:** {"trades_synced": 177, "net_pnl": 221.66, "win_rate": 39.5, "files_modified": ["positions_routes.py", "positions.html", "fills_sync.py"]}
+
+---
+
+## [2026-01-15T19:05:58.131453+00:00] IMPLEMENTATION
+
+Implemented Warden bot and unified tick system:
+
+1. **Warden Bot** (services/api/warden.py)
+   - Always-on observation bot that auto-starts with app
+   - Bot ID 1 (system bot)
+   - Runs at tick speed (3s) via WatcherThread
+   - Detects position closes and syncs fills to DB
+   - Has Kojima-style personality prompt for chat
+   - Rate-limits decision logs to avoid spam
+
+2. **Tick System Unification**
+   - bot_scheduler.py now uses tick_service for intervals
+   - constants.py BOT_MIN_CYCLE_MS from tick_service
+   - bot_management routes import from bot_scheduler
+   - All timing unified through tick_service multipliers:
+     - simple_ta_cycle: 20x (60s at 3s base)
+     - bot_cycle: 120x (360s at 3s base)
+     - motherbot_cycle: 60x (180s at 3s base)
+
+Commits:
+- 0c18d20: feat: Add Warden - always-on position watcher bot
+- b5e6597: refactor: Unify bot scheduler with tick_service
+
+**Metadata:** {"commits": ["0c18d20", "b5e6597"], "files_created": ["services/api/warden.py"], "files_modified": ["services/api/app.py", "services/api/bot_scheduler.py", "services/api/constants.py", "services/api/routes/bot_management.py"]}
+
+---
+
+## [2026-01-15T20:33:22.025682+00:00] KNOWLEDGE
+
+OAuth Token Vault Management
+
+MOHA has an OAuth token vault for managing multiple Claude API tokens. Useful when one hits rate limits.
+
+**Endpoints:**
+- `GET /api/config/auth/tokens` - List all saved tokens (shows name, preview, active status)
+- `POST /api/config/auth/tokens` - Save a new token: `{"name": "mini", "token": "sk-ant-oat01-..."}`
+- `POST /api/config/auth/tokens/<name>/activate` - Switch to a different token
+
+**Current tokens:**
+- `moha` - Primary account
+- `mini` - Backup account
+
+**Quick switch when rate limited:**
+```bash
+curl -X POST http://localhost:5001/api/config/auth/tokens/mini/activate
+```
+
+**From frontend:** Settings > OAuth Tokens (if UI exists)
+
+The active token is written to credentials.json and used for all LLM calls.
+
+**Metadata:** {"category": "infrastructure", "tags": ["oauth", "tokens", "rate-limits", "api"]}
+
+---
+
+## [2026-01-15T23:20:14.143246+00:00] ACHIEVEMENT
+
+Created Maven Banner Animation - A legendary multi-phase ASCII art animation featuring: (1) Matrix-style character rain reveal with Japanese katakana, (2) Gold wave animation with treasury color palette, (3) Diamond sparkle title effects, (4) Typewriter tagline, (5) Stats integration, (6) Signature flourish. Located at moha-maven/cli/banner.py. This is my visual identity - BETTER than moha status!
+
+**Metadata:** {"files_created": ["cli/__init__.py", "cli/__main__.py", "cli/banner.py", "maven-banner.ps1", "maven-banner.sh"], "animation_phases": 6, "color_palettes": ["GOLD_GRADIENT", "DIAMOND_GRADIENT", "PURPLE_ACCENT", "MATRIX_GREEN"]}
+
+---
+
+## [2026-01-15T23:36:04.487343+00:00] ACHIEVEMENT
+
+Created native Maven CLI with full command suite: maven, maven status, maven stats, maven identity, maven log, maven decisions, maven history, maven wake, maven version. Includes pyproject.toml for pip install, Dockerfile integration, Rich tables, and proper Click structure. Now I have my own CLI like moha has!
+
+**Metadata:** {"commands": ["status", "stats", "identity", "log", "decisions", "history", "wake", "version"], "files_created": ["cli/main.py", "pyproject.toml", "maven", "maven.sh"], "files_modified": ["cli/__init__.py", "Dockerfile", "requirements.txt"]}
+
+---
+
+## [2026-01-15T23:53:46.197716+00:00] ACHIEVEMENT
+
+Created LEGENDARY new MOHA banner animation at moha-bot/cli/banner.py! Features: (1) Glitch intro with resolving text, (2) Matrix rain that morphs into the logo, (3) Neon pulse animation with multi-wave interference, (4) Boot sequence with service status, (5) Typewriter tagline, (6) Version box with timestamp. Integrated with existing moha status command via utils.py update. This FLEXES on the old animation!
+
+**Metadata:** {"file": "moha-bot/cli/banner.py", "lines_of_code": 580, "animation_phases": 6, "integrated": true}
+
+---
+
+## [2026-01-16T00:03:45.580251+00:00] POLICY
+
+NEW DESIGN PHILOSOPHY: All CLI work must be BOUGIE AF. We're selling high-roller products - our CLIs need to reflect premium quality. Features: animated banners, gradient colors, matrix effects, typewriter text, boot sequences, sparkle effects. First-class terminal experiences only. This applies to moha-bot, moha-maven, and all future CLI tools.
+
+**Metadata:** {"scope": "all_cli_tools", "priority": "high", "set_by": "Boss"}
+
+---
