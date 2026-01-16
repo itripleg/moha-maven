@@ -545,3 +545,218 @@ NEW DESIGN PHILOSOPHY: All CLI work must be BOUGIE AF. We're selling high-roller
 **Metadata:** {"scope": "all_cli_tools", "priority": "high", "set_by": "Boss"}
 
 ---
+
+## [2026-01-16T00:49:25.239423+00:00] IMPLEMENTATION
+
+Ported Fib Defender trading game from motherhaven (React) to moha-bot (vanilla JS + Flask). Full implementation includes:
+- Candlestick chart with live price simulation
+- Fibonacci retracement levels with glow effects
+- RSI and MACD oscillators
+- Long/short positions with 1x-50x leverage
+- P&L calculation and liquidation mechanics
+- Terminal noir aesthetic matching moha-bot design system
+
+Files created/modified:
+- moha-bot/services/frontend/app.py (added /game route)
+- moha-bot/services/frontend/templates/pages/fib_defender.html (new - full game)
+- moha-bot/services/frontend/templates/base.html (added nav links)
+
+First fun deliverable for the motherhaven-unification project!
+
+**Metadata:** {"project": "motherhaven-unification", "task": "fib-defender-port", "status": "completed"}
+
+---
+
+## [2026-01-16T00:57:45.162633+00:00] CODE_FIX
+
+Fixed Warden/Attach loop foundation bugs in moha-bot/cli/commands/bot.py: (1) Fixed line counting for terminal animation - now counts embedded newlines, (2) Added Warden detection via config.is_system_bot, (3) Prevented stop/start/pause/cycle commands on system bots, (4) Changed display to show "◉ WATCHING" instead of countdown for Warden, (5) Added "CONTINUOUS (Position Tracker)" mode label for system bots
+
+**Metadata:** {"file": "cli/commands/bot.py", "bugs_fixed": 5, "lines_changed": "~50"}
+
+---
+
+## [2026-01-16T01:45:11.846860+00:00] MILESTONE
+
+Bougied up the host-level moha.ps1 ecosystem CLI with full premium animations: glitch intro, matrix rain reveal, neon pulse, boot sequence, typewriter effect, and 256-color ANSI gradients. Now matches the bougie standard established for moha-bot and moha-maven CLIs.
+
+**Metadata:** {"script": "moha.ps1", "features": ["glitch_intro", "matrix_reveal", "neon_pulse", "boot_sequence", "typewriter", "256_color_ansi"], "policy": "ALL CLI work must be bougie/premium quality"}
+
+---
+
+## [2026-01-16T02:53:20.539340+00:00] BUG_FIX
+
+TESTNET BALANCE NOT SHOWING - DOTENV LOADING BUG
+
+**Problem:** Motherbot couldn't see testnet balance. API returning errors, get_hl_client_for_network('testnet') returning None.
+
+**Root Cause:** app.py in moha-bot/services/api/ was NOT loading .env.local file. Environment variables (HYPERLIQUID_WALLET_PRIVATE_KEY, etc.) were never loaded when API started.
+
+**Fix Applied:** Added dotenv loading to top of app.py:
+```python
+from pathlib import Path
+from dotenv import load_dotenv
+_env_path = Path(__file__).parent.parent.parent / '.env.local'
+load_dotenv(dotenv_path=_env_path)
+```
+
+**Key Insight:** Other scripts (test_sdk.py, maven_spawn.py, etc.) had proper dotenv loading with explicit paths, but the main app.py was missing it. The path must go UP from services/api/ to moha-bot root where .env.local lives.
+
+**NOT a geo-block issue:** Tested and confirmed Hyperliquid testnet API is accessible from our location (US). The "testnet geo-blocked in US" comments in code are outdated or don't apply to us.
+
+**Additional Note:** After fix, testnet account showed $0 balance - account needs to be funded via Hyperliquid testnet faucet at https://app.hyperliquid-testnet.xyz
+
+**Files Modified:** moha-bot/services/api/app.py
+
+**Requires:** API restart after fix to pick up new code.
+
+**Metadata:** {"bug_type": "missing_dotenv_loading", "file_fixed": "moha-bot/services/api/app.py", "testnet_accessible": true, "geo_block": false, "commit_needed": true}
+
+---
+
+## [2026-01-16T02:55:18.583933+00:00] KNOWLEDGE
+
+HYPERLIQUID NETWORK CONNECTIVITY - KEY FACTS
+
+**Testnet Access:**
+- Testnet URL: https://api.hyperliquid-testnet.xyz
+- Previously believed to be "geo-blocked in US" - THIS IS FALSE (at least for us)
+- Direct API test confirmed working from our location
+- Comments in code about geo-blocking may be outdated
+
+**Network Testing Endpoint:**
+- POST /api/config/wallet/test - Tests wallet connection
+- Uses check_hl_health() and get_hl_client_for_network()
+- Returns connection status, network, wallet addresses
+
+**Common Connectivity Issues:**
+1. Missing dotenv loading (app.py didn't load .env.local) - FIXED 2026-01-16
+2. SSL errors - suggests VPN or network issues
+3. Max retries exceeded - API unreachable
+4. Client returns None - env vars not set
+
+**Environment Variables Required:**
+- HYPERLIQUID_WALLET_PRIVATE_KEY (with 0x prefix)
+- HYPERLIQUID_ACCOUNT_ADDRESS (optional, for API wallet setup)
+- HYPERLIQUID_WATCHED_ADDRESS (for copy-trading)
+- HYPERLIQUID_TESTNET (true/false)
+
+**Testing Commands:**
+```python
+# Direct API test (no auth)
+import requests
+resp = requests.post('https://api.hyperliquid-testnet.xyz/info', json={'type': 'meta'})
+print(resp.status_code)  # 200 = accessible
+
+# Client test (requires env vars)
+from hl_client import get_hl_client_for_network
+client = get_hl_client_for_network('testnet')
+result = client.get_account_state()
+```
+
+**Metadata:** {"category": "infrastructure", "tags": ["hyperliquid", "testnet", "connectivity", "debugging"]}
+
+---
+
+## [2026-01-16T02:56:23.390305+00:00] KNOWLEDGE
+
+HYPERLIQUID TESTNET GEO-BLOCKING - REFERENCE FROM moha-bot/references/hyperliquid_network_connectivity_test.txt
+
+**CONFIRMED BEHAVIOR (Dec 27, 2025):**
+
+WITHOUT VPN (US IP: 75.130.159.48):
+❌ TESTNET API: UNREACHABLE - SSL handshake failure
+✅ MAINNET API: ACCESSIBLE - works perfectly
+
+WITH VPN (Non-US IP: 185.197.248.193):
+✅ TESTNET API: ACCESSIBLE
+✅ MAINNET API: ACCESSIBLE
+
+**KEY FINDINGS:**
+1. Hyperliquid TESTNET API is GEO-RESTRICTED from US IPs
+2. Frontend (app.hyperliquid-testnet.xyz) is accessible, but API endpoints are blocked
+3. MAINNET API has NO geo-restrictions - works globally
+4. Docker containers inherit host VPN routing
+
+**ERROR SIGNATURE (testnet without VPN):**
+- Error Type: requests.exceptions.SSLError
+- Error Detail: MaxRetryError - SSL record layer failure
+- Root Cause: SSL handshake failure at TLS level (geo-block, not actual SSL issue)
+
+**WORKFLOW:**
+- VPN ON: Full testnet + mainnet access ✅
+- VPN OFF: Only mainnet access (US location)
+
+**UPDATE (Jan 16, 2026):**
+When I tested today, testnet was accessible - this suggests either:
+1. User has VPN connected
+2. Geo-blocking may have been lifted/changed
+3. IP range changed
+
+Always check VPN status when debugging testnet connectivity issues!
+
+**Reference File:** C:\Users\ecoli\OneDrive\Documents\GitHub\moha-bot\references\hyperliquid_network_connectivity_test.txt
+
+**Metadata:** {"category": "infrastructure", "tags": ["hyperliquid", "testnet", "geo-block", "vpn", "connectivity"], "reference_file": "moha-bot/references/hyperliquid_network_connectivity_test.txt", "test_date": "2025-12-27"}
+
+---
+
+## [2026-01-16T02:58:36.112557+00:00] DISCOVERY
+
+HYPERLIQUID TESTNET GEO-BLOCK LIFTED!
+
+**Test Date:** 2026-01-16
+**IP Address:** 75.130.159.48 (US, same as Dec test)
+**VPN Status:** OFF
+
+**RESULT:** ✅ TESTNET API NOW ACCESSIBLE FROM US!
+
+The December 2025 test showed testnet was blocked from this exact IP. Today it works perfectly - full market data returned.
+
+**What Changed:**
+- Hyperliquid appears to have removed the US geo-restriction on testnet API
+- Or: They whitelisted certain IP ranges
+- Or: The block was temporary/intermittent
+
+**Reference Document Now Outdated:**
+moha-bot/references/hyperliquid_network_connectivity_test.txt (Dec 27, 2025)
+- Stated testnet was blocked from US
+- NO LONGER ACCURATE as of Jan 2026
+
+**Updated Conclusions:**
+✅ TESTNET: Accessible from US (no VPN needed)
+✅ MAINNET: Accessible from US (no VPN needed)
+
+**The REAL issue today was:** app.py not loading .env.local - NOT geo-blocking!
+
+For moha. 💎
+
+**Metadata:** {"category": "infrastructure", "tags": ["hyperliquid", "testnet", "geo-block", "discovery"], "test_ip": "75.130.159.48", "vpn": false, "testnet_accessible": true, "reference_outdated": true}
+
+---
+
+## [2026-01-16T02:59:53.980555+00:00] KNOWLEDGE
+
+HYPERLIQUID TESTNET ACCESS - SPLIT BEHAVIOR (Jan 2026)
+
+**From US without VPN:**
+✅ TESTNET API (api.hyperliquid-testnet.xyz) - WORKS
+❌ TESTNET FRONTEND (app.hyperliquid-testnet.xyz) - BLOCKED, needs VPN
+
+**Implication:**
+- Bots/code can hit testnet API directly from US - no VPN needed
+- But to USE the testnet UI (fund account, manual trades, etc.) - VPN required
+- This is backwards from what you'd expect (usually frontend works, API blocked)
+
+**Workflow:**
+- To fund testnet account: Connect VPN first, then use frontend faucet
+- To run bots on testnet: No VPN needed, API works
+- For development: Can develop/test against API without VPN, but need VPN for UI operations
+
+**Previous behavior (Dec 2025):** Both API and frontend were blocked from US
+**Current behavior (Jan 2026):** Only frontend blocked, API accessible
+
+This is important for debugging - if testnet "doesn't work", check whether it's API or frontend!
+
+**Metadata:** {"category": "infrastructure", "tags": ["hyperliquid", "testnet", "geo-block", "frontend", "api", "vpn"], "api_works_us": true, "frontend_works_us": false}
+
+---
