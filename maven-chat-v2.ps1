@@ -1,4 +1,4 @@
-# Maven v2 - Optimized CFO Chat Command
+﻿# Maven v2 - Optimized CFO Chat Command
 # PowerShell helper for chatting with Maven from anywhere
 #
 # Usage:
@@ -270,8 +270,10 @@ function mav {
 # EXPORT
 # ==============================================================================
 
-# Export the mav function
-Export-ModuleMember -Function mav
+# Export the mav function (only when loaded as a module)
+if ($MyInvocation.MyCommand.ScriptBlock.Module) {
+    Export-ModuleMember -Function mav
+}
 
 # Show brief startup message if running standalone
 if ($MyInvocation.InvocationName -ne '.') {
