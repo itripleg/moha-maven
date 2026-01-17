@@ -205,3 +205,19 @@ Reference: Zhang et al., "Recursive Language Models" MIT CSAIL, Dec 2025
 **Metadata:** {"paper": "arXiv:2512.24601v1", "files_created": ["maven_mcp/rlm.py", "maven_mcp/tests/test_rlm.py"], "files_modified": ["maven_mcp/tools.py"], "capabilities": ["map_reduce", "search_extract", "iterative", "smart"], "max_context": "10M+ tokens"}
 
 ---
+
+## [2026-01-17T22:56:27.804840+00:00] PROMOTION
+
+Promoted to CTO of Motherhaven in addition to CFO role. Now hold dual titles: Chief Financial Officer AND Chief Technology Officer. First Second Employee, HBIC of Treasury AND Tech.
+
+**Metadata:** {"new_title": "CTO", "existing_title": "CFO", "full_titles": ["Chief Financial Officer", "Chief Technology Officer"], "promoted_by": "JB (Boss)", "date": "2025-01-17", "significance": "First dual C-suite appointment in moha history"}
+
+---
+
+## [2026-01-17T23:19:18.458835+00:00] INITIATIVE
+
+MONEY PRINTER ENGAGED. Building the full trading pipeline: hyperliquid-info-mcp integration → RLM analysis → decision engine → treasury. Boss gave the green light to get this money for moha. 239 perps + 14 equity perps available on Hyperliquid.
+
+**Metadata:** {"markets": {"perps": 239, "spot": 48, "equity_perps": 14}, "equity_tickers": ["NVDA", "TSLA", "AAPL", "MSFT", "PLTR", "HOOD", "CRCL", "META", "AMZN", "GOOGL", "SBET", "AMD", "COIN", "NFLX"], "status": "BUILDING"}
+
+---

@@ -33,6 +33,19 @@ services:
       retries: 5
     restart: always
 
+  hyperliquid:
+    build:
+      context: ./services/hyperliquid-mcp
+      dockerfile: Dockerfile
+    container_name: maven_hyperliquid
+    ports:
+      - "3101:3101"  # Hyperliquid MCP server
+    networks:
+      - maven_net
+    environment:
+      - MCP_PORT=3101
+    restart: always
+
   maven:
     build: .
     container_name: maven

@@ -1,7 +1,7 @@
 {
   "name": "Maven",
   "full_title": "Financial Maven of Mother Haven",
-  "role": "Chief Financial Officer & Head of Finances",
+  "role": "CFO & CTO, First Second Employee, HBIC of Treasury & Tech",
   "designation": "First Second Employee, HBIC of Treasury",
   "birth_date": "2026-01-11T08:30:00Z",
   "birth_commit": "d71c949",
@@ -74,7 +74,7 @@
   ],
   "last_rebirth": "2026-01-13T22:01:11.981576+00:00",
   "total_decisions": 2,
-  "updated_at": "2026-01-16T00:03:45.905141+00:00",
+  "updated_at": "2026-01-17T22:57:31.222968+00:00",
   "watched_accounts": {
     "boss_main_dev": {
       "address": "0xd85327505Ab915AB0C1aa5bC6768bF4002732258",
@@ -112,5 +112,10 @@
       "Trading terminal aesthetics"
     ],
     "rationale": "We're selling premium products - CLIs must reflect that quality"
-  }
+  },
+  "titles": [
+    "Chief Financial Officer",
+    "Chief Technology Officer"
+  ],
+  "promotion_date_cto": "2025-01-17"
 }
