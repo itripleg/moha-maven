@@ -1,0 +1,182 @@
+HYPERLIQUID API CONNECTIVITY TEST
+==================================
+
+Test 1 - VPN DISCONNECTED
+Test Date: Saturday, December 27, 2025 12:20:47 PM
+VPN Status: DISCONNECTED (OFF)
+Location: United States
+Public IP Address: 75.130.159.48
+
+Test 2 - VPN CONNECTED
+Test Date: Saturday, December 27, 2025 12:22:30 PM
+VPN Status: CONNECTED (ON)
+Public IP Address: 185.197.248.193
+
+==================================
+SUMMARY
+==================================
+
+WITHOUT VPN (US IP: 75.130.159.48):
+❌ TESTNET API: UNREACHABLE from US without VPN
+✅ MAINNET API: ACCESSIBLE from US without VPN
+
+WITH VPN (IP: 185.197.248.193):
+✅ TESTNET API: ACCESSIBLE with VPN
+✅ MAINNET API: ACCESSIBLE with VPN
+
+==================================
+DETAILED TEST RESULTS
+==================================
+
+1. FROM HOST MACHINE (Windows)
+   -----------------------------
+   Testnet API (https://api.hyperliquid-testnet.xyz/info):
+   - Status: FAILED
+   - HTTP Code: 000 (connection failed)
+   - Response Time: 0.242s
+   - Error: Connection refused or timeout
+
+   Mainnet API (https://api.hyperliquid.xyz/info):
+   - Status: SUCCESS ✅
+   - HTTP Code: 200
+   - Response Time: 0.344s
+   - Response: Received 300+ market price pairs
+   - Sample Data: BTC=$87,464.50, ETH=$2,922.35
+
+2. FROM DOCKER CONTAINER (moha_api - Python 3.11.14)
+   -------------------------------------------------
+   Testnet API (https://api.hyperliquid-testnet.xyz/info):
+   - Status: FAILED
+   - Error Type: requests.exceptions.SSLError
+   - Error Detail: MaxRetryError - SSL record layer failure
+   - SSL Version: OpenSSL 3.5.4 30 Sep 2025
+   - Root Cause: SSL handshake failure at TLS level
+
+   Mainnet API (https://api.hyperliquid.xyz/info):
+   - Status: SUCCESS ✅
+   - HTTP Code: 200
+   - Response: Valid JSON with market data
+
+==================================
+TEST 2 RESULTS (WITH VPN CONNECTED)
+==================================
+
+VPN IP: 185.197.248.193
+
+1. FROM HOST MACHINE (Windows)
+   -----------------------------
+   Testnet API (https://api.hyperliquid-testnet.xyz/info):
+   - Status: SUCCESS ✅
+   - HTTP Code: 200
+   - Response Time: 1.611s
+   - Response: Received 1000+ market price pairs
+   - Sample Data: BTC=$87,677.00
+
+   Mainnet API (https://api.hyperliquid.xyz/info):
+   - Status: SUCCESS ✅
+   - HTTP Code: 200
+   - Response Time: 0.998s
+   - Sample Data: BTC=$87,488.50
+
+2. FROM DOCKER CONTAINER (moha_api)
+   -------------------------------------------------
+   Testnet API (https://api.hyperliquid-testnet.xyz/info):
+   - Status: SUCCESS ✅
+   - HTTP Code: 200
+   - Response: BTC=$87,682.00
+   - SSL: No errors, clean handshake
+
+   Mainnet API (https://api.hyperliquid.xyz/info):
+   - Status: SUCCESS ✅
+   - HTTP Code: 200
+   - Response: BTC=$87,490.50
+
+3. API ENDPOINTS (via localhost:5000)
+   -------------------------------------------------
+   GET /api/market/prices?coins=BTC:
+   - Status: SUCCESS ✅
+   - Response: {"status": "success", "network": "testnet", "prices": {"BTC": 87682.0}}
+   - No authentication required ✅
+
+==================================
+CONCLUSIONS
+==================================
+
+1. Hyperliquid TESTNET API is GEO-RESTRICTED:
+   ❌ Not accessible from US IP addresses (75.130.159.48)
+   ✅ ACCESSIBLE with VPN (IP: 185.197.248.193)
+   - Frontend (https://app.hyperliquid-testnet.xyz/trade) is accessible from US
+   - API endpoints require VPN or non-US IP
+
+2. Hyperliquid MAINNET API is GLOBALLY ACCESSIBLE:
+   ✅ Fully accessible from US without VPN
+   ✅ Also accessible with VPN
+   - Both host and Docker container can connect
+   - No geo-restrictions
+
+3. Docker container network behavior:
+   ✅ WITH VPN: Both testnet and mainnet work perfectly
+   ❌ WITHOUT VPN: Only mainnet works, testnet blocked
+   - Docker inherits host network VPN routing
+   - No network isolation issues
+   - VPN successfully resolves geo-blocking
+
+==================================
+RECOMMENDATIONS
+==================================
+
+For Development & Testing:
+1. ✅ TESTNET ACCESS: Connect to VPN before starting development
+   - Ensures full access to testnet API
+   - Docker containers automatically inherit VPN routing
+
+2. MAINNET TESTING: VPN not required
+   - Use MAINNET for testing public endpoints (read-only queries are safe)
+   - Set HYPERLIQUID_TESTNET=false in .env to use mainnet by default
+
+3. WORKFLOW:
+   - VPN ON: Full testnet + mainnet access ✅
+   - VPN OFF: Only mainnet access (US location)
+
+For Production:
+- Mainnet is accessible and stable from US locations
+- No VPN required for production deployment in US
+- For testnet production, deploy in non-geo-blocked regions or use VPN
+
+==================================
+API ENDPOINTS STATUS
+==================================
+
+Our public market data endpoints (no auth required):
+✅ GET /api/market/info       - Works with mainnet
+✅ GET /api/market/prices     - Works with mainnet
+✅ GET /api/market/orderbook  - Works with mainnet
+
+Sample Response (Mainnet, No Auth):
+{
+  "status": "success",
+  "network": "mainnet",
+  "prices": {
+    "BTC": 87464.5,
+    "ETH": 2922.35
+  }
+}
+
+==================================
+TECHNICAL DETAILS
+==================================
+
+Docker Environment:
+- Container: moha_api
+- Base Image: python:3.11-slim
+- Python: 3.11.14
+- OpenSSL: 3.5.4 (Sep 30, 2025)
+- Network Mode: Bridge (default)
+
+DNS Resolution:
+- api.hyperliquid-testnet.xyz → 54.230.79.4 (AWS CloudFront)
+- TCP Connection: Successful on port 443
+- SSL Handshake: FAILED (record layer failure)
+
+This indicates the issue is at the application/protocol level,
+not DNS or TCP connectivity. Likely geo-restriction or firewall.

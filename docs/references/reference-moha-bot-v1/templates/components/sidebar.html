@@ -1,0 +1,107 @@
+<div class="sidebar" style="position: sticky; top: 65px; overflow-y: auto; max-height: calc(100vh - 65px);">
+    <!-- Account Stats -->
+    <div class="sidebar-section">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-sm);">
+            <div class="stat-compact">
+                <span class="label">Balance</span>
+                <span class="value" id="balance">$0.00</span>
+            </div>
+            <div class="stat-compact">
+                <span class="label">Decisions</span>
+                <span class="value" id="total-decisions">0</span>
+            </div>
+            <div class="stat-compact">
+                <span class="label">Realized PnL</span>
+                <span class="value" id="realized-pnl">$0.00</span>
+            </div>
+            <div class="stat-compact">
+                <span class="label">Unrealized PnL</span>
+                <span class="value" id="unrealized-pnl">$0.00</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Positions -->
+    <div class="sidebar-section" id="sidebar-positions">
+        <h3>Active Positions</h3>
+        <div id="positions-list">
+            <div style="padding: var(--spacing-md); text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+                No open positions
+            </div>
+        </div>
+    </div>
+
+    <!-- Human Financier Input -->
+    <div class="sidebar-section">
+        <h3 style="display: flex; align-items: center; gap: 6px;">
+            💼 Human Financier
+        </h3>
+
+        <!-- Active Guidance Display -->
+        <div id="active-input-display" style="display: none; margin-bottom: 12px;">
+            <div style="padding: 12px; background: linear-gradient(135deg, rgba(40, 167, 69, 0.15) 0%, rgba(40, 167, 69, 0.05) 100%); border-left: 4px solid #28a745; border-radius: 6px; position: relative;">
+                <div style="font-size: 0.7em; color: #28a745; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 6px; text-transform: uppercase;">📢 Active Directive</div>
+                <div id="active-input-text" style="color: var(--text-primary); font-size: 0.9em; line-height: 1.5; font-style: italic;"></div>
+                <div id="active-input-time" style="font-size: 0.65em; color: var(--text-muted); margin-top: 6px; opacity: 0.8;"></div>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="input-container" style="background: rgba(255, 255, 255, 0.02); padding: 12px; border-radius: 8px; border: 1px solid var(--border-primary);">
+            <textarea id="supervisor-message"
+                      placeholder="Give guidance or attach a chart..."
+                      rows="3"
+                      style="width: 100%; padding: 10px; background: var(--bg-primary); border: 1px solid var(--border-primary); border-radius: 6px; color: var(--text-primary); font-size: 0.85em; line-height: 1.5; resize: vertical; font-family: inherit;"></textarea>
+
+            <!-- Image Upload Area -->
+            <div id="image-upload-area" style="margin-top: 8px; padding: 6px 8px; background: rgba(255,255,255,0.03); border: 1px dashed var(--border-primary); border-radius: 4px; display: none;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 0.7em; color: var(--text-muted);">📎</span>
+                    <span id="image-filename" style="font-size: 0.7em; color: var(--text-muted); flex: 1;"></span>
+                    <button id="remove-image-btn" onclick="removeImage()" style="padding: 2px 6px; font-size: 0.65em; background: none; border: none; color: var(--text-muted); cursor: pointer; opacity: 0.7; transition: opacity 0.2s;">✕</button>
+                </div>
+            </div>
+
+            <div class="input-actions" style="display: flex; align-items: center; gap: 8px; margin-top: 10px;">
+                <!-- Hidden file input -->
+                <input type="file" id="image-input" accept="image/*" style="display: none;" onchange="handleImageSelect(event)">
+
+                <!-- Attach Chart Button -->
+                <button onclick="document.getElementById('image-input').click()"
+                        title="Attach chart image"
+                        style="padding: 6px 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-primary); border-radius: 6px; color: var(--text-muted); cursor: pointer; font-size: 0.85em; transition: all 0.2s; display: flex; align-items: center; gap: 4px;">
+                    <span style="font-size: 1.1em;">📎</span>
+                </button>
+
+                <!-- Mode Toggle Switch -->
+                <div style="display: flex; align-items: center; gap: 6px; padding: 4px 8px; background: rgba(255,255,255,0.03); border-radius: 6px; border: 1px solid var(--border-primary);">
+                    <span id="mode-label" style="font-size: 0.7em; color: var(--text-muted); min-width: 45px; text-align: right;">Cycle</span>
+                    <label class="mode-switch" title="Cycle: Guidance for next trading run&#10;Direct: Ask bot a question now (status, reasoning, etc.)">
+                        <input type="checkbox" id="mode-toggle" style="display: none;">
+                        <span class="mode-slider"></span>
+                    </label>
+                </div>
+
+                <!-- Send Button -->
+                <button id="send-btn" class="primary-btn" style="flex: 1; padding: 8px 14px; border-radius: 6px; font-weight: 500; font-size: 0.85em; transition: all 0.2s;">
+                    Send
+                </button>
+
+                <!-- Clear Button -->
+                <button id="clear-input-btn"
+                        title="Clear input"
+                        style="padding: 6px 10px; background: none; border: 1px solid var(--border-primary); border-radius: 6px; color: var(--text-muted); cursor: pointer; font-size: 0.8em; transition: all 0.2s;">
+                    ✕
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bot Activity -->
+    <div class="sidebar-section" style="padding-bottom: var(--spacing-xl);">
+        <h3>Activity Log</h3>
+        <div class="activity-console" id="activity-console">
+            <div class="console-message">Waiting for bot activity...</div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Database - Motherbot{% endblock %}
+
+{% block content %}
+            <section style="padding: var(--spacing-lg);">
+            <div class="section-header">
+                <h2>Database Explorer</h2>
+                <span class="activity-subtitle">View trading history and manage local data</span>
+            </div>
+
+            <div class="database-container">
+                <!-- Tabs -->
+                <div class="db-tabs">
+                    <button class="db-tab active" onclick="switchDbTab('overview')">Overview</button>
+                    <button class="db-tab" onclick="switchDbTab('decisions')">Decisions</button>
+                    <button class="db-tab" onclick="switchDbTab('positions')">All Positions</button>
+                    <button class="db-tab" onclick="switchDbTab('account')">Account History</button>
+                    <button class="db-tab" onclick="switchDbTab('manage')">Manage</button>
+                </div>
+
+                <!-- Overview Tab -->
+                <div class="db-tab-content active" id="db-tab-overview">
+                    <div class="db-stats-grid" id="db-stats-grid">
+                        <div class="db-stat-card">
+                            <div class="db-stat-label">Total Decisions</div>
+                            <div class="db-stat-value" id="stat-decisions">-</div>
+                            <div class="db-stat-sublabel">All time</div>
+                        </div>
+                        <div class="db-stat-card">
+                            <div class="db-stat-label">Total Positions</div>
+                            <div class="db-stat-value" id="stat-positions">-</div>
+                            <div class="db-stat-sublabel">Opened & closed</div>
+                        </div>
+                        <div class="db-stat-card">
+                            <div class="db-stat-label">Open Positions</div>
+                            <div class="db-stat-value" id="stat-open-positions">-</div>
+                            <div class="db-stat-sublabel">Currently active</div>
+                        </div>
+                        <div class="db-stat-card">
+                            <div class="db-stat-label">Database Size</div>
+                            <div class="db-stat-value" id="stat-db-size">-</div>
+                            <div class="db-stat-sublabel">MB</div>
+                        </div>
+                    </div>
+
+                    <div style="padding: var(--spacing-md); background: var(--bg-tertiary); border-radius: var(--radius-md); border: 1px solid var(--border-primary);">
+                        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: var(--spacing-sm);">
+                            <strong>Database Path:</strong>
+                        </div>
+                        <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted); word-break: break-all;" id="stat-db-path">
+                            Loading...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Decisions Tab -->
+                <div class="db-tab-content" id="db-tab-decisions">
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Coin</th>
+                                    <th>Signal</th>
+                                    <th>Size</th>
+                                    <th>Leverage</th>
+                                    <th>Confidence</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="decisions-table-body">
+                                <tr><td colspan="7" style="text-align: center; padding: var(--spacing-xl); color: var(--text-muted);">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Positions Tab -->
+                <div class="db-tab-content" id="db-tab-positions">
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Entry Time</th>
+                                    <th>Coin</th>
+                                    <th>Side</th>
+                                    <th>Entry Price</th>
+                                    <th>Size (USD)</th>
+                                    <th>Leverage</th>
+                                    <th>Exit Price</th>
+                                    <th>Realized P&L</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="positions-table-body">
+                                <tr><td colspan="9" style="text-align: center; padding: var(--spacing-xl); color: var(--text-muted);">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Account History Tab -->
+                <div class="db-tab-content" id="db-tab-account">
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Account Value</th>
+                                    <th>Unrealized P&L</th>
+                                    <th>Realized P&L</th>
+                                    <th>Total P&L</th>
+                                    <th># Positions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="account-table-body">
+                                <tr><td colspan="6" style="text-align: center; padding: var(--spacing-xl); color: var(--text-muted);">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Manage Tab -->
+                <div class="db-tab-content" id="db-tab-manage">
+                    <div style="margin-bottom: var(--spacing-lg);">
+                        <h3 style="font-size: 1rem; margin-bottom: var(--spacing-sm); color: var(--text-primary);">Database Actions</h3>
+                        <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: var(--spacing-md);">
+                            Manage your local SQLite database. Use these actions to reset data or start fresh.
+                        </p>
+                    </div>
+
+                    <div class="db-actions">
+                        <button class="db-action-btn danger" onclick="resetDatabase()">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <path fill-rule="evenodd" d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2v1z"/>
+                                <path d="M8 4.466V.534a.25.25 0 0 0-.41-.192L5.23 2.308a.25.25 0 0 0 0 .384l2.36 1.966A.25.25 0 0 0 8 4.466z"/>
+                            </svg>
+                            Clear All Data
+                        </button>
+                        <div class="db-action-warning">
+                            ⚠️ This will permanently delete all decisions, positions, and account history. This action cannot be undone.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+{% endblock %}

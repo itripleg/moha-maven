@@ -1,0 +1,137 @@
+// app/motherbot/components/layout/MotherBotHeader.tsx
+"use client";
+
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { useBotStatus } from "../../hooks/useBotStatus";
+import { useBotAccount } from "../../hooks/useBotAccount";
+import {
+  Activity,
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  Cpu,
+  Zap,
+} from "lucide-react";
+import type { BotStrategyMode } from "../../types";
+
+interface MotherBotHeaderProps {
+  strategyMode: BotStrategyMode;
+  onStrategyModeChange: (mode: BotStrategyMode) => void;
+}
+
+export function MotherBotHeader({
+  strategyMode,
+  onStrategyModeChange,
+}: MotherBotHeaderProps) {
+  const { status, loading: statusLoading } = useBotStatus();
+  const { account, loading: accountLoading } = useBotAccount();
+
+  const isRunning = status?.status === "running";
+  const totalPnl = account?.total_pnl || 0;
+  const isProfitable = totalPnl >= 0;
+
+  return (
+    <div className="space-y-4">
+      {/* Title Row */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-primary/10 rounded-lg border border-primary/20">
+            <Cpu className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
+              MotherBot
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              Claude-Powered Autonomous Trading on Hyperliquid
+            </p>
+          </div>
+        </div>
+
+        {/* Status Badge */}
+        <Badge
+          variant={isRunning ? "default" : "secondary"}
+          className={`gap-1.5 px-3 py-1.5 ${
+            isRunning
+              ? "bg-green-500/20 text-green-500 border-green-500/30"
+              : "bg-muted text-muted-foreground"
+          }`}
+        >
+          {isRunning ? (
+            <>
+              <Zap className="h-3 w-3 animate-pulse" />
+              Active
+            </>
+          ) : (
+            <>
+              <Activity className="h-3 w-3" />
+              {status?.status || "Offline"}
+            </>
+          )}
+        </Badge>
+      </div>
+
+      {/* Quick Stats Row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {/* Balance */}
+        <Card className="bg-card/30 backdrop-blur-sm border-primary/40 p-3">
+          <div className="flex items-center gap-2 mb-1">
+            <DollarSign className="h-3.5 w-3.5 text-primary/70" />
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
+              Balance
+            </p>
+          </div>
+          <p className="text-lg font-bold">
+            ${(account?.balance_usd || 0).toFixed(2)}
+          </p>
+        </Card>
+
+        {/* Equity */}
+        <Card className="bg-card/30 backdrop-blur-sm border-primary/40 p-3">
+          <div className="flex items-center gap-2 mb-1">
+            <Activity className="h-3.5 w-3.5 text-blue-500/70" />
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
+              Equity
+            </p>
+          </div>
+          <p className="text-lg font-bold">
+            ${(account?.equity_usd || 0).toFixed(2)}
+          </p>
+        </Card>
+
+        {/* Total P&L */}
+        <Card className="bg-card/30 backdrop-blur-sm border-primary/40 p-3">
+          <div className="flex items-center gap-2 mb-1">
+            {isProfitable ? (
+              <TrendingUp className="h-3.5 w-3.5 text-green-500/70" />
+            ) : (
+              <TrendingDown className="h-3.5 w-3.5 text-red-500/70" />
+            )}
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
+              Total P&L
+            </p>
+          </div>
+          <p
+            className={`text-lg font-bold ${
+              isProfitable ? "text-green-500" : "text-red-500"
+            }`}
+          >
+            {isProfitable ? "+" : ""}${totalPnl.toFixed(2)}
+          </p>
+        </Card>
+
+        {/* Open Positions */}
+        <Card className="bg-card/30 backdrop-blur-sm border-primary/40 p-3">
+          <div className="flex items-center gap-2 mb-1">
+            <Activity className="h-3.5 w-3.5 text-purple-500/70" />
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
+              Positions
+            </p>
+          </div>
+          <p className="text-lg font-bold">{account?.num_positions || 0}</p>
+        </Card>
+      </div>
+    </div>
+  );
+}

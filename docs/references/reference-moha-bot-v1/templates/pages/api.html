@@ -1,0 +1,442 @@
+{% extends "base.html" %}
+
+{% block title %}API Documentation - Motherbot{% endblock %}
+
+{% block content %}
+<section style="padding: var(--spacing-lg);">
+    <div class="section-header" style="margin-bottom: var(--spacing-lg);">
+        <h2>API Documentation</h2>
+        <span class="activity-subtitle">REST API endpoints for trading bot control and data access</span>
+    </div>
+
+    <div style="display: grid; gap: var(--spacing-lg);">
+
+        <!-- Health & Status -->
+        <div class="api-category">
+            <h3 class="api-category-title">Health & Status</h3>
+
+            <div class="api-endpoint">
+                <div class="api-endpoint-header">
+                    <span class="api-method get">GET</span>
+                    <span class="api-path">/health</span>
+                </div>
+                <p class="api-description">Health check endpoint - returns bot service status</p>
+                <div class="api-response-example">
+                    <strong>Response:</strong>
+                    <pre>{ "status": "healthy" }</pre>
+                </div>
+            </div>
+
+            <div class="api-endpoint">
+                <div class="api-endpoint-header">
+                    <span class="api-method get">GET</span>
+                    <span class="api-path">/api/status</span>
+                </div>
+                <p class="api-description">Get comprehensive bot status including config, wallet, and environment</p>
+                <div class="api-response-example">
+                    <strong>Response:</strong>
+                    <pre>{
+  "bot": { "state": "stopped", "cycle_count": 0 },
+  "version": "2.0.0",
+  "wallet": { "address": "0x...", "testnet": true },
+  "environment": { ... }
+}</pre>
+                </div>
+            </div>
+
+            <div class="api-endpoint">
+                <div class="api-endpoint-header">
+                    <span class="api-method get">GET</span>
+                    <span class="api-path">/api/wallet</span>
+                </div>
+                <p class="api-description">Get configured wallet address and network settings</p>
+                <div class="api-response-example">
+                    <strong>Response:</strong>
+                    <pre>{
+  "address": "0x123...",
+  "testnet": true,
+  "trading_mode": "paper"
+}</pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bot Control -->
+        <div class="api-category">
+            <h3 class="api-category-title">Bot Control</h3>
+
+            <div class="api-endpoint">
+                <div class="api-endpoint-header">
+                    <span class="api-method post">POST</span>
+                    <span class="api-path">/api/bot/start</span>
+                </div>
+                <p class="api-description">Start the trading bot execution loop</p>
+                <div class="api-response-example">
+                    <strong>Response:</strong>
+                    <pre>{ "status": "started", "message": "..." }</pre>
+                </div>
+            </div>
+
+            <div class="api-endpoint">
+                <div class="api-endpoint-header">
+                    <span class="api-method post">POST</span>
+                    <span class="api-path">/api/bot/pause</span>
+                </div>
+                <p class="api-description">Pause the bot (keeps thread alive)</p>
+            </div>
+
+            <div class="api-endpoint">
+                <div class="api-endpoint-header">
+                    <span class="api-method post">POST</span>
+                    <span class="api-path">/api/bot/resume</span>
+                </div>
+                <p class="api-description">Resume the paused bot</p>
+            </div>
+
+            <div class="api-endpoint">
+                <div class="api-endpoint-header">
+                    <span class="api-method post">POST</span>
+                    <span class="api-path">/api/bot/stop</span>
+                </div>
+                <p class="api-description">Stop the bot completely (terminates thread)</p>
+            </div>
+        </div>
+
+        <!-- User Input / Commands -->
+        <div class="api-category">
+            <h3 class="api-category-title">User Input / Commands</h3>
+
+            <div class="api-endpoint">
+                <div class="api-endpoint-header">
+                    <span class="api-method get">GET</span>
+                    <span class="api-path">/api/user_input</span>
+                </div>
+                <p class="api-description">Get active user input/command</p>
+            </div>
+
+            <div class="api-endpoint">
+                <div class="api-endpoint-header">
+                    <span class="api-method post">POST</span>
+                    <span class="api-path">/api/user_input</span>
+                </div>
+                <p class="api-description">Send command to bot (cycle or interrupt)</p>
+                <div class="api-request-example">
+                    <strong>Request Body:</strong>
+                    <pre>{
+  "message": "analyze BTC market conditions",
+  "image": "base64_encoded_chart_image"
+}</pre>
+                </div>
+            </div>
+
+            <div class="api-endpoint">
+                <div class="api-endpoint-header">
+                    <span class="api-method delete">DELETE</span>
+                    <span class="api-path">/api/user_input</span>
+                </div>
+                <p class="api-description">Clear active user input</p>
+            </div>
+
+            <div class="api-endpoint">
+                <div class="api-endpoint-header">
+                    <span class="api-method post">POST</span>
+                    <span class="api-path">/api/upload_image</span>
+                </div>
+                <p class="api-description">Upload chart image for analysis</p>
+                <div class="api-request-example">
+                    <strong>Request:</strong> multipart/form-data with 'image' file
+                </div>
+            </div>
+        </div>
+
+        <!-- Market Data -->
+        <div class="api-category">
+            <h3 class="api-category-title">Market Data</h3>
+
+            <div class="api-endpoint">
+                <div class="api-endpoint-header">
+                    <span class="api-method get">GET</span>
+                    <span class="api-method post">POST</span>
+                    <span class="api-path">/api/candles</span>
+                </div>
+                <p class="api-description">Get or save OHLCV candle data</p>
+                <div class="api-request-example">
+                    <strong>GET params:</strong> ?asset=BTC&timeframe=1hr&limit=100<br>
+                    <strong>POST body:</strong>
+                    <pre>{
+  "asset": "BTC",
+  "timeframe": "1hr",
+  "timestamp": 1234567890,
+  "open": 50000, "high": 51000,
+  "low": 49500, "close": 50500,
+  "volume": 1000
+}</pre>
+                </div>
+            </div>
+
+            <div class="api-endpoint">
+                <div class="api-endpoint-header">
+                    <span class="api-method get">GET</span>
+                    <span class="api-method post">POST</span>
+                    <span class="api-path">/api/indicators</span>
+                </div>
+                <p class="api-description">Get or save TA indicators (SMA, EMA, MACD, RSI, FIB)</p>
+                <div class="api-request-example">
+                    <strong>GET params:</strong> ?asset=BTC&timeframe=1hr&indicator_type=SMA&limit=100<br>
+                    <strong>POST body:</strong>
+                    <pre>{
+  "asset": "BTC",
+  "timeframe": "1hr",
+  "indicator_type": "SMA",
+  "value": 50000,
+  "metadata": { "period": 20 }
+}</pre>
+                </div>
+            </div>
+
+            <div class="api-endpoint">
+                <div class="api-endpoint-header">
+                    <span class="api-method get">GET</span>
+                    <span class="api-method post">POST</span>
+                    <span class="api-path">/api/market-data</span>
+                </div>
+                <p class="api-description">Get or save market snapshots (price, volume, funding rate, open interest)</p>
+                <div class="api-request-example">
+                    <strong>GET params:</strong> ?asset=BTC&limit=100<br>
+                    <strong>POST body:</strong>
+                    <pre>{
+  "asset": "BTC",
+  "price": 50000,
+  "volume_24h": 1000000,
+  "funding_rate": 0.0001,
+  "open_interest": 500000,
+  "data": { ... }
+}</pre>
+                </div>
+            </div>
+
+            <div class="api-endpoint">
+                <div class="api-endpoint-header">
+                    <span class="api-method get">GET</span>
+                    <span class="api-method post">POST</span>
+                    <span class="api-path">/api/account-states</span>
+                </div>
+                <p class="api-description">Get or save account state snapshots (balance, equity, PnL, margin)</p>
+                <div class="api-request-example">
+                    <strong>GET params:</strong> ?limit=100<br>
+                    <strong>POST body:</strong>
+                    <pre>{
+  "balance": 10000,
+  "equity": 10500,
+  "margin_used": 2000,
+  "available_margin": 8500,
+  "unrealized_pnl": 500,
+  "realized_pnl": 0,
+  "total_pnl": 500,
+  "account_value": 10500,
+  "data": { ... }
+}</pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trading Data -->
+        <div class="api-category">
+            <h3 class="api-category-title">Trading Data</h3>
+
+            <div class="api-endpoint">
+                <div class="api-endpoint-header">
+                    <span class="api-method get">GET</span>
+                    <span class="api-method post">POST</span>
+                    <span class="api-method put">PUT</span>
+                    <span class="api-path">/api/positions</span>
+                </div>
+                <p class="api-description">Get, create, or update positions. POST creates new position, PUT updates existing</p>
+                <div class="api-request-example">
+                    <strong>GET params:</strong> ?limit=10<br>
+                    <strong>POST body (create position):</strong>
+                    <pre>{
+  "asset": "BTC",
+  "side": "long",
+  "entry_price": 50000,
+  "size": 100,
+  "leverage": 2,
+  "initiated_by": "api"
+}</pre>
+                    <strong>PUT body (update position):</strong>
+                    <pre>{
+  "position_id": 1,
+  "current_price": 51000,
+  "pnl": 100,
+  "pnl_percent": 2.0,
+  "status": "open"
+}</pre>
+                </div>
+            </div>
+
+            <div class="api-endpoint">
+                <div class="api-endpoint-header">
+                    <span class="api-method get">GET</span>
+                    <span class="api-method post">POST</span>
+                    <span class="api-path">/api/decisions</span>
+                </div>
+                <p class="api-description">Query or save trading decisions. GET supports filtering by asset and limit</p>
+                <div class="api-request-example">
+                    <strong>GET params:</strong> ?asset=BTC&limit=100<br>
+                    <strong>POST body:</strong>
+                    <pre>{
+  "asset": "BTC",
+  "decision": "enter_long",
+  "reasoning": "Bullish indicators...",
+  "confidence": 0.85,
+  "strategy_mode": "cooperative",
+  "cycle_number": 42
+}</pre>
+                </div>
+            </div>
+
+            <div class="api-endpoint">
+                <div class="api-endpoint-header">
+                    <span class="api-method get">GET</span>
+                    <span class="api-method post">POST</span>
+                    <span class="api-path">/api/visions</span>
+                </div>
+                <p class="api-description">Get or save trading visions (AI market analysis)</p>
+                <div class="api-request-example">
+                    <strong>POST body:</strong>
+                    <pre>{
+  "asset": "BTC",
+  "vision_text": "Market shows...",
+  "market_context": "...",
+  "ta_summary": "..."
+}</pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Prompts -->
+        <div class="api-category">
+            <h3 class="api-category-title">Prompts</h3>
+
+            <div class="api-endpoint">
+                <div class="api-endpoint-header">
+                    <span class="api-method get">GET</span>
+                    <span class="api-method post">POST</span>
+                    <span class="api-path">/api/prompts</span>
+                </div>
+                <p class="api-description">Get or save strategy prompts (cooperative, hedging, entry_exit, date_collecting)</p>
+                <div class="api-request-example">
+                    <strong>GET params:</strong> ?prompt_type=cooperative<br>
+                    <strong>POST body:</strong>
+                    <pre>{
+  "prompt_type": "cooperative",
+  "prompt_text": "You are a risk-averse trader..."
+}</pre>
+                </div>
+            </div>
+
+            <div class="api-endpoint">
+                <div class="api-endpoint-header">
+                    <span class="api-method get">GET</span>
+                    <span class="api-method post">POST</span>
+                    <span class="api-path">/api/prompt_presets</span>
+                </div>
+                <p class="api-description">Get all prompt presets or create new preset</p>
+            </div>
+
+            <div class="api-endpoint">
+                <div class="api-endpoint-header">
+                    <span class="api-method get">GET</span>
+                    <span class="api-method post">POST</span>
+                    <span class="api-path">/api/prompt_presets/active</span>
+                </div>
+                <p class="api-description">Get or set active prompt preset</p>
+                <div class="api-request-example">
+                    <strong>POST body:</strong>
+                    <pre>{ "preset_name": "aggressive_scalper" }</pre>
+                </div>
+            </div>
+
+            <div class="api-endpoint">
+                <div class="api-endpoint-header">
+                    <span class="api-method get">GET</span>
+                    <span class="api-path">/api/prompt_presets/sample_user_prompt</span>
+                </div>
+                <p class="api-description">Get sample user prompt for testing</p>
+            </div>
+        </div>
+
+        <!-- Configuration -->
+        <div class="api-category">
+            <h3 class="api-category-title">Configuration</h3>
+
+            <div class="api-endpoint">
+                <div class="api-endpoint-header">
+                    <span class="api-method get">GET</span>
+                    <span class="api-method post">POST</span>
+                    <span class="api-path">/api/bot_config</span>
+                </div>
+                <p class="api-description">Get or update bot configuration</p>
+                <div class="api-request-example">
+                    <strong>POST body:</strong>
+                    <pre>{
+  "min_margin": 1.0,
+  "max_margin": 50.0,
+  "min_balance": 10.0,
+  "cycle_interval": 180,
+  "max_positions": 3
+}</pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Database Management -->
+        <div class="api-category">
+            <h3 class="api-category-title">Database Management</h3>
+
+            <div class="api-endpoint">
+                <div class="api-endpoint-header">
+                    <span class="api-method get">GET</span>
+                    <span class="api-path">/api/database/status</span>
+                </div>
+                <p class="api-description">Get database connection status and statistics</p>
+                <div class="api-response-example">
+                    <strong>Response:</strong>
+                    <pre>{
+  "connected": true,
+  "database": "SQLite",
+  "tables": { "positions": 10, "decisions": 50, ... },
+  "total_records": 100
+}</pre>
+                </div>
+            </div>
+
+            <div class="api-endpoint">
+                <div class="api-endpoint-header">
+                    <span class="api-method post">POST</span>
+                    <span class="api-path">/api/database/reset</span>
+                </div>
+                <p class="api-description">Reset database (WARNING: deletes all data)</p>
+                <div class="api-request-example">
+                    <strong>POST body:</strong>
+                    <pre>{ "confirm": true }</pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documentation -->
+        <div class="api-category">
+            <h3 class="api-category-title">Documentation</h3>
+
+            <div class="api-endpoint">
+                <div class="api-endpoint-header">
+                    <span class="api-method get">GET</span>
+                    <span class="api-path">/api/index</span>
+                </div>
+                <p class="api-description">Get API documentation index with all endpoints</p>
+            </div>
+        </div>
+
+    </div>
+</section>
+{% endblock %}

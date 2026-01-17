@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}API Documentation - MotherHaven{% endblock %}
+
+{% block content %}
+<nav class="docs-nav">
+    <ul>
+        {% for category_name, category in docs.endpoints.items() %}
+        <li><a href="#{{ category_name }}">{{ category_name|replace('_', ' ')|title }}</a></li>
+        {% endfor %}
+    </ul>
+</nav>
+
+<div class="docs-content">
+    <div class="container">
+        <!-- Overview Section -->
+        <div class="api-category" id="overview">
+            <h2 class="api-category-title">Overview</h2>
+            <div class="api-endpoint">
+                <div class="api-description">
+                    <p><strong>Base URL:</strong> <code>{{ docs.base_url }}</code></p>
+                    <p><strong>Response Format:</strong> {{ docs.documentation.response_format }}</p>
+                    <p><strong>Authentication:</strong> {{ docs.documentation.authentication }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Endpoints by Category -->
+        {% for category_name, category in docs.endpoints.items() %}
+        <div class="api-category" id="{{ category_name }}">
+            <h2 class="api-category-title">{{ category_name|replace('_', ' ')|title }}</h2>
+
+            {% if category.description %}
+            <p class="text-secondary" style="margin-bottom: var(--spacing-lg);">{{ category.description }}</p>
+            {% endif %}
+
+            {% if category.routes %}
+            {% for route, route_data in category.routes.items() %}
+            {% set method = route.split(' ')[0] %}
+            {% set path = route.split(' ', 1)[1] if ' ' in route else route %}
+
+            <div class="api-endpoint">
+                <div class="api-endpoint-header">
+                    <span class="api-method {{ method|lower }}">{{ method }}</span>
+                    {% if method == 'GET' %}
+                    <a href="{{ path }}" class="api-path" target="_blank">{{ path }}</a>
+                    {% else %}
+                    <span class="api-path">{{ path }}</span>
+                    {% endif %}
+                </div>
+
+                {% if route_data.description %}
+                <p class="api-description">{{ route_data.description }}</p>
+                {% endif %}
+
+                {% if route_data.path_params %}
+                <div class="api-parameters">
+                    <strong>Path Parameters</strong>
+                    <ul>
+                        {% for param_name, param_value in route_data.path_params.items() %}
+                        <li>
+                            <span class="param-name">{{ param_name }}</span>
+                            <span class="param-description">- {{ param_value }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {% if route_data.query_params %}
+                <div class="api-parameters">
+                    <strong>Query Parameters</strong>
+                    <ul>
+                        {% for param_name, param_value in route_data.query_params.items() %}
+                        <li>
+                            <span class="param-name">{{ param_name }}</span>
+                            <span class="param-description">- {{ param_value }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {% if route_data.parameters %}
+                <div class="api-parameters">
+                    <strong>Request Body</strong>
+                    {% if route_data.parameters is mapping %}
+                    <ul>
+                        {% for param_name, param_value in route_data.parameters.items() %}
+                        <li>
+                            <span class="param-name">{{ param_name }}</span>
+                            <span class="param-description">- {{ param_value }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-secondary">{{ route_data.parameters }}</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% if route_data.response %}
+                <div class="api-response-example">
+                    <strong>Response</strong>
+                    {% if route_data.response is mapping %}
+                    <pre><code>{{ route_data.response|tojson(indent=2) }}</code></pre>
+                    {% else %}
+                    <pre><code>{{ route_data.response }}</code></pre>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% if route_data.status_codes %}
+                <div class="api-parameters">
+                    <strong>Status Codes</strong>
+                    <ul>
+                        {% for code, description in route_data.status_codes.items() %}
+                        <li>
+                            <span class="param-name">{{ code }}</span>
+                            <span class="param-description">- {{ description }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            {% if category.valid_modes %}
+            <div class="api-endpoint">
+                <div class="api-description">
+                    <strong>Valid Modes:</strong>
+                    <code>{{ category.valid_modes|join(', ') }}</code>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if category.valid_prompt_types %}
+            <div class="api-endpoint">
+                <div class="api-description">
+                    <strong>Valid Prompt Types:</strong>
+                    <code>{{ category.valid_prompt_types|join(', ') }}</code>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if category.categories %}
+            <div class="api-endpoint">
+                <div class="api-description">
+                    <strong>Configuration Categories:</strong>
+                    <code>{{ category.categories|join(', ') }}</code>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if category.modes %}
+            <div class="api-endpoint">
+                <div class="api-description">
+                    <strong>Input Modes:</strong>
+                    <ul style="margin-top: var(--spacing-sm); list-style: none;">
+                        {% for mode_name, mode_desc in category.modes.items() %}
+                        <li><span class="param-name">{{ mode_name }}</span>: {{ mode_desc }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if category.notes %}
+            <div class="api-endpoint">
+                <div class="api-description">
+                    <em class="text-muted">Note: {{ category.notes }}</em>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <!-- Error Codes Section -->
+        <div class="api-category" id="error-codes">
+            <h2 class="api-category-title">Error Codes</h2>
+            <div class="api-endpoint">
+                <div class="api-parameters">
+                    <strong>HTTP Status Codes</strong>
+                    <ul>
+                        {% for code, description in docs.error_codes.items() %}
+                        <li>
+                            <span class="param-name">{{ code }}</span>
+                            <span class="param-description">- {{ description }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

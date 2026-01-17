@@ -62,6 +62,28 @@ docker inspect maven | grep -A5 Mounts
 
 ## Docker & Container Issues
 
+### CRITICAL: Postgres + OneDrive = Catastrophe
+**NEVER use bind mounts for postgres data on OneDrive-synced directories!**
+
+OneDrive tries to sync postgres data files while postgres is writing → corruption → crash.
+
+**Wrong:**
+```yaml
+volumes:
+  - ./postgres_data:/var/lib/postgresql/data  # CATASTROPHE
+```
+
+**Correct:**
+```yaml
+volumes:
+  moha_postgres_data:
+    external: true  # Stored in Docker volume dir, not OneDrive
+```
+
+Named volumes are stored in Docker's volume directory (e.g., `C:\ProgramData\docker\volumes`), safely outside OneDrive sync.
+
+---
+
 ### Symptom: "password authentication failed for user moha_user"
 **Red Herring:** It's NOT the password (usually)
 **FIRST CHECK:** Docker network DNS collision!

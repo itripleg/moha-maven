@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - Motherbot{% endblock %}
+
+{% block content %}
+            <section style="padding: var(--spacing-lg);">
+                <h2 style="margin: 0 0 var(--spacing-lg) 0; font-size: 1.5rem; color: var(--text-primary);">⚙️ Bot Configuration</h2>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-lg); margin-bottom: var(--spacing-lg);">
+
+                    <!-- Trading Limits -->
+                    <div style="background: var(--bg-secondary); padding: var(--spacing-lg); border-radius: var(--radius-md); border: 1px solid var(--border-primary);">
+                        <h3 style="margin: 0 0 4px 0; font-size: 0.95rem; color: var(--text-primary); font-weight: 600;">💰 Trading Limits</h3>
+                        <p style="margin: 0 0 var(--spacing-md) 0; font-size: 0.8rem; color: var(--text-muted);">Position sizes and balance thresholds</p>
+
+                        <div style="display: grid; gap: 14px;">
+                            <!-- Min Margin -->
+                            <div style="display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center;">
+                                <div>
+                                    <label style="display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 2px;">
+                                        Min Margin
+                                    </label>
+                                    <div style="font-size: 0.7em; color: var(--text-muted);">
+                                        $1 × 40x = $40 position
+                                    </div>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <span style="font-size: 0.85em; color: var(--text-muted);">$</span>
+                                    <input type="number" id="setting-min-margin" min="0.1" step="0.1"
+                                           style="width: 80px; padding: 8px 10px; border: 1px solid var(--border-primary); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); font-size: 0.9rem; text-align: right;">
+                                </div>
+                            </div>
+
+                            <!-- Max Margin -->
+                            <div style="display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center;">
+                                <div>
+                                    <label style="display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 2px;">
+                                        Max Margin
+                                    </label>
+                                    <div style="font-size: 0.7em; color: var(--text-muted);">
+                                        Maximum collateral per trade
+                                    </div>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <span style="font-size: 0.85em; color: var(--text-muted);">$</span>
+                                    <input type="number" id="setting-max-margin" min="1" step="1"
+                                           style="width: 80px; padding: 8px 10px; border: 1px solid var(--border-primary); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); font-size: 0.9rem; text-align: right;">
+                                </div>
+                            </div>
+
+                            <!-- Min Balance -->
+                            <div style="display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center;">
+                                <div>
+                                    <label style="display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 2px;">
+                                        Min Balance
+                                    </label>
+                                    <div style="font-size: 0.7em; color: var(--text-muted);">
+                                        Bot pauses below this
+                                    </div>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <span style="font-size: 0.85em; color: var(--text-muted);">$</span>
+                                    <input type="number" id="setting-min-balance" min="0" step="0.1"
+                                           style="width: 80px; padding: 8px 10px; border: 1px solid var(--border-primary); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); font-size: 0.9rem; text-align: right;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Execution Settings -->
+                    <div style="background: var(--bg-secondary); padding: var(--spacing-lg); border-radius: var(--radius-md); border: 1px solid var(--border-primary);">
+                        <h3 style="margin: 0 0 4px 0; font-size: 0.95rem; color: var(--text-primary); font-weight: 600;">⏱️ Execution</h3>
+                        <p style="margin: 0 0 var(--spacing-md) 0; font-size: 0.8rem; color: var(--text-muted);">Bot cycle timing and position limits</p>
+
+                        <div style="display: grid; gap: 14px;">
+                            <!-- Cycle Interval -->
+                            <div style="display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center;">
+                                <div>
+                                    <label style="display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 2px;">
+                                        Cycle Interval
+                                    </label>
+                                    <div style="font-size: 0.7em; color: var(--text-muted);">
+                                        How often bot analyzes
+                                    </div>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <input type="number" id="setting-interval" min="10" step="10"
+                                           style="width: 80px; padding: 8px 10px; border: 1px solid var(--border-primary); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); font-size: 0.9rem; text-align: right;">
+                                    <span style="font-size: 0.85em; color: var(--text-muted);">sec</span>
+                                </div>
+                            </div>
+
+                            <!-- Max Open Positions -->
+                            <div style="display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center;">
+                                <div>
+                                    <label style="display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 2px;">
+                                        Max Positions
+                                    </label>
+                                    <div style="font-size: 0.7em; color: var(--text-muted);">
+                                        Diversify across coins
+                                    </div>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <input type="number" id="setting-max-positions" min="1" max="10" step="1"
+                                           style="width: 80px; padding: 8px 10px; border: 1px solid var(--border-primary); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); font-size: 0.9rem; text-align: right;">
+                                    <span style="font-size: 0.85em; color: var(--text-muted);">coins</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; max-width: 600px; margin: 0 auto var(--spacing-md) auto;">
+                    <button id="reset-settings-btn" class="secondary-btn" style="padding: 10px 20px; font-size: 0.9em;">Reset</button>
+                    <button id="save-settings-btn" class="primary-btn" style="padding: 10px 32px; font-weight: 600; font-size: 0.9em;">Save Settings</button>
+                </div>
+
+                <!-- Info Note -->
+                <div style="padding: 10px 12px; background: rgba(40, 167, 69, 0.08); border-left: 3px solid #28a745; border-radius: 4px; text-align: center; max-width: 600px; margin: 0 auto;">
+                    <div style="font-size: 0.75em; color: var(--text-secondary); line-height: 1.5;">
+                        ✓ Changes saved to database • Takes effect on next trading cycle (~5min) • No restart needed
+                    </div>
+                </div>
+            </section>
+{% endblock %}

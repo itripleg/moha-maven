@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Strategy - Motherbot{% endblock %}
+
+{% block content %}
+            <section style="padding: var(--spacing-lg);">
+                <h2 style="margin: 0 0 var(--spacing-lg) 0; font-size: 1.5rem; color: var(--text-primary);">Trading Strategy Configuration</h2>
+
+                <div style="display: grid; gap: var(--spacing-lg); max-width: 100%; width: 100%;">
+                    <!-- Preset Selector -->
+                    <div style="background: var(--bg-secondary); padding: var(--spacing-lg); border-radius: var(--radius-md); border: 1px solid var(--border-primary);">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--spacing-md);">
+                            <div>
+                                <h3 style="margin: 0; font-size: 1rem; color: var(--text-primary);">Strategy Preset</h3>
+                                <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: var(--text-secondary);">Choose a pre-configured strategy or customize below</p>
+                            </div>
+                            <div style="display: flex; gap: var(--spacing-sm);">
+                                <button id="load-preset-btn" class="secondary-btn" style="padding: 8px 16px;">Load Preset</button>
+                                <button id="apply-strategy-btn" class="primary-btn" style="padding: 8px 16px;">Apply & Save</button>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 300px 1fr; gap: var(--spacing-md);">
+                            <div>
+                                <label for="strategy-preset-select" style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px;">Preset Template:</label>
+                                <select id="strategy-preset-select" style="width: 100%; padding: 10px; border: 1px solid var(--border-primary); border-radius: var(--radius-sm); background: var(--bg-primary); color: var(--text-primary); font-size: 0.875rem;">
+                                    <option value="">Loading...</option>
+                                </select>
+                            </div>
+
+                            <div id="preset-description-box" style="padding: 12px; background: rgba(0, 123, 255, 0.05); border-left: 4px solid #007bff; border-radius: var(--radius-sm); display: none;">
+                                <div style="font-size: 0.75rem; font-weight: 600; color: #007bff; margin-bottom: 4px; text-transform: uppercase;">Description</div>
+                                <div id="preset-description-text" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;"></div>
+                            </div>
+                        </div>
+
+                        <div id="active-preset-indicator" style="margin-top: var(--spacing-md); padding: 10px; background: rgba(40, 167, 69, 0.1); border-left: 4px solid #28a745; border-radius: var(--radius-sm); display: none;">
+                            <div style="font-size: 0.75rem; font-weight: 600; color: #28a745; margin-bottom: 2px; text-transform: uppercase;">Currently Active</div>
+                            <div id="active-preset-name" style="font-size: 0.875rem; color: var(--text-primary);"></div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">ℹ️ Prompts stored in database • LLM trading logic not yet implemented</div>
+                        </div>
+                    </div>
+
+                    <!-- Prompt Viewer with Toggle -->
+                    <div style="background: var(--bg-secondary); padding: var(--spacing-lg); border-radius: var(--radius-md); border: 1px solid var(--border-primary);">
+                        <!-- Header with Toggle -->
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--spacing-md);">
+                            <div>
+                                <h3 style="margin: 0; font-size: 1rem; color: var(--text-primary);" id="prompt-view-title">System Prompt (Claude's Instructions)</h3>
+                                <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: var(--text-secondary);" id="prompt-view-description">This defines Claude's trading personality, risk tolerance, and decision-making rules</p>
+                            </div>
+
+                            <!-- System/User Toggle -->
+                            <div style="display: flex; align-items: center; gap: 8px; padding: 4px; background: rgba(255,255,255,0.05); border-radius: 6px; border: 1px solid var(--border-primary);">
+                                <button id="view-system-btn" class="prompt-view-toggle active" onclick="switchPromptView('system')" style="padding: 6px 12px; border: none; background: var(--brand-primary); color: white; border-radius: 4px; cursor: pointer; font-size: 0.75em; font-weight: 500; transition: all 0.2s;">
+                                    System
+                                </button>
+                                <button id="view-user-btn" class="prompt-view-toggle" onclick="switchPromptView('user')" style="padding: 6px 12px; border: none; background: transparent; color: var(--text-muted); border-radius: 4px; cursor: pointer; font-size: 0.75em; font-weight: 500; transition: all 0.2s;">
+                                    User
+                                </button>
+                            </div>
+                        </div>
+
+                        <textarea id="prompt-editor"
+                                  style="width: 100%; height: 200px; padding: 16px; font-family: 'Courier New', monospace; font-size: 0.875rem; line-height: 1.6; border: 1px solid var(--border-primary); border-radius: var(--radius-sm); background: var(--bg-primary); color: var(--text-primary); resize: vertical;"
+                                  placeholder="Loading prompt..."></textarea>
+                        <div style="margin-top: var(--spacing-sm); font-size: 0.75rem; color: var(--text-muted);">
+                            <span id="prompt-editor-tip">💡 Tip: You can edit the System Prompt directly. Changes are saved when you click "Apply & Save"</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+{% endblock %}

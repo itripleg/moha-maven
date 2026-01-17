@@ -1,0 +1,118 @@
+"use client";
+
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Check, RefreshCw } from "lucide-react";
+import { useLivePrices, getPriceForCoin } from "../hooks/useLivePrices";
+
+export interface TradingPair {
+  symbol: string;
+  display: string;
+}
+
+const TRADING_PAIRS: TradingPair[] = [
+  { symbol: "ALL", display: "All" }, // View all pairs
+  { symbol: "BTC/USDC:USDC", display: "BTC" },
+  { symbol: "ETH/USDC:USDC", display: "ETH" },
+  { symbol: "SOL/USDC:USDC", display: "SOL" },
+  { symbol: "ADA/USDC:USDC", display: "ADA" },
+];
+
+interface PairSelectorProps {
+  selectedPair: string;
+  onSelectPair: (pair: string) => void;
+  network?: "testnet" | "mainnet";
+}
+
+export function PairSelector({ selectedPair, onSelectPair, network = "testnet" }: PairSelectorProps) {
+  const { prices, loading, lastUpdate, refresh } = useLivePrices(network);
+
+  const formatPrice = (price: number | null): string => {
+    if (price === null) return "---";
+
+    if (price >= 1000) {
+      return `$${(price / 1000).toFixed(1)}k`;
+    } else if (price >= 1) {
+      return `$${price.toFixed(2)}`;
+    } else {
+      return `$${price.toFixed(4)}`;
+    }
+  };
+
+  const getTimeSinceUpdate = (): string => {
+    if (!lastUpdate) return "";
+    const seconds = Math.floor((Date.now() - new Date(lastUpdate).getTime()) / 1000);
+    if (seconds < 60) return `${seconds}s ago`;
+    return `${Math.floor(seconds / 60)}m ago`;
+  };
+
+  return (
+    <Card className="bg-card/30 backdrop-blur-sm border-primary/40">
+      <CardContent className="pt-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold text-foreground">View Filter</h3>
+          <div className="flex items-center gap-2">
+            {lastUpdate && (
+              <Badge variant="secondary" className="text-[9px] px-2 py-0.5">
+                <RefreshCw className="h-2.5 w-2.5 mr-1" />
+                {getTimeSinceUpdate()}
+              </Badge>
+            )}
+            <span className="text-xs text-muted-foreground">
+              Live Prices
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+          {TRADING_PAIRS.map((pair) => {
+            const isSelected = selectedPair === pair.symbol;
+            const price = pair.symbol !== "ALL" ? getPriceForCoin(prices, pair.symbol) : null;
+
+            return (
+              <button
+                key={pair.symbol}
+                onClick={() => onSelectPair(pair.symbol)}
+                className={`
+                  relative p-3 rounded-lg border transition-all
+                  ${isSelected
+                    ? 'border-primary bg-primary/10 shadow-sm'
+                    : 'border-primary/40 hover:border-primary/60 hover:bg-primary/5'
+                  }
+                `}
+              >
+                {isSelected && (
+                  <div className="absolute top-1 right-1">
+                    <Check className="w-4 h-4 text-primary" />
+                  </div>
+                )}
+                <div className="text-left">
+                  <div className={`font-semibold ${isSelected ? 'text-primary' : 'text-foreground'}`}>
+                    {pair.display}
+                  </div>
+                  {pair.symbol !== "ALL" && (
+                    <div className={`text-xs font-mono ${loading ? 'text-muted-foreground animate-pulse' : 'text-green-500'}`}>
+                      {formatPrice(price)}
+                    </div>
+                  )}
+                  {pair.symbol === "ALL" && (
+                    <div className="text-xs text-muted-foreground">
+                      View all
+                    </div>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="mt-3 pt-3 border-t border-primary/20">
+          <p className="text-xs text-muted-foreground">
+            <strong>Note:</strong> Prices update every 30 seconds from Hyperliquid. The bot analyzes all pairs every cycle and decides which to trade based on market conditions.
+            This filter only affects what you see in the UI.
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

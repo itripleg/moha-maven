@@ -1,0 +1,303 @@
+{
+  "name": "Moha-Bot Smart Monitor",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{"field": "minutes", "minutesInterval": 10}]
+        }
+      },
+      "id": "1",
+      "name": "Every 10 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "password",
+        "command": "cd /c/Users/ecoli/OneDrive/Documents/GitHub/moha-bot && docker-compose ps --format json 2>&1 || docker ps --format json",
+        "cwd": "/"
+      },
+      "id": "2",
+      "name": "Check Containers First",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [460, 300],
+      "credentials": {
+        "ssh": {
+          "id": "{{SSH_CREDENTIAL_ID}}",
+          "name": "localhost-ssh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "password",
+        "command": "cd /c/Users/ecoli/OneDrive/Documents/GitHub/moha-bot && docker logs moha_api --tail 50 2>&1 || echo 'Container not found'",
+        "cwd": "/"
+      },
+      "id": "3",
+      "name": "Get API Logs",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [460, 400],
+      "credentials": {
+        "ssh": {
+          "id": "{{SSH_CREDENTIAL_ID}}",
+          "name": "localhost-ssh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const dockerStatus = $input.all()[0].json.stdout || '';\nconst apiLogs = $input.all()[1].json.stdout || '';\n\nreturn [{json: {\n  docker_status: dockerStatus,\n  api_logs: apiLogs,\n  timestamp: new Date().toISOString()\n}}];"
+      },
+      "id": "4",
+      "name": "Prepare for AI",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{\"You are a DevOps AI analyzing a Docker-based trading bot system.\\n\\n=== DOCKER CONTAINERS ===\\n\" + $json.docker_status + \"\\n\\n=== API CONTAINER LOGS (last 50 lines) ===\\n\" + $json.api_logs + \"\\n\\n=== YOUR TASK ===\\n1. Analyze which containers are UP, DOWN, RESTARTING, or UNHEALTHY\\n2. Check if moha_api (port 5000) is running\\n3. Identify any errors in the logs\\n4. Determine if the system is ready for API testing\\n\\nRespond with JSON only (no markdown):\\n{\\n  \\\"containers_status\\\": {\\n    \\\"moha_api\\\": \\\"running|stopped|restarting|crashed\\\",\\n    \\\"moha_frontend\\\": \\\"running|stopped|crashed\\\",\\n    \\\"moha_db\\\": \\\"running|stopped\\\",\\n    \\\"moha_redis\\\": \\\"running|stopped\\\"\\n  },\\n  \\\"api_available\\\": true|false,\\n  \\\"critical_issues\\\": [\\\"list of issues\\\"],\\n  \\\"errors_found\\\": [\\\"specific errors from logs\\\"],\\n  \\\"recommended_action\\\": \\\"proceed_with_api_tests|restart_containers|fix_code_issues|manual_intervention\\\",\\n  \\\"reasoning\\\": \\\"brief explanation\\\"\\n}\"}}",
+        "options": {}
+      },
+      "id": "5",
+      "name": "Claude: Analyze Containers",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "model": {
+          "mode": "list",
+          "value": "claude-3-5-haiku-20241022"
+        },
+        "options": {}
+      },
+      "id": "6",
+      "name": "Claude Haiku",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [900, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "let analysis;\ntry {\n  const output = $json.output || '{}';\n  const match = output.match(/\\{[\\s\\S]*\\}/);\n  analysis = match ? JSON.parse(match[0]) : JSON.parse(output);\n} catch (e) {\n  analysis = {\n    containers_status: {},\n    api_available: false,\n    critical_issues: ['Failed to parse AI response'],\n    recommended_action: 'manual_intervention',\n    reasoning: 'AI response parsing error'\n  };\n}\nreturn [{json: analysis}];"
+      },
+      "id": "7",
+      "name": "Parse AI Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [{"value1": "={{ $json.api_available }}", "value2": true}]
+        }
+      },
+      "id": "8",
+      "name": "Is API Available?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:5000/api/health",
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "id": "9",
+      "name": "Check API Health",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1560, 200],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:5000/api/bots",
+        "method": "POST",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {"name": "name", "value": "=Test-{{$now.toFormat('HHmmss')}}"},
+            {"name": "pair", "value": "BTC-USDT"}
+          ]
+        },
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "id": "10",
+      "name": "Create Test Bot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1780, 200],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "url": "=http://localhost:5000/api/bots/{{$json.id}}/mode",
+        "method": "PATCH",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [{"name": "mode", "value": "observation"}]
+        },
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "id": "11",
+      "name": "Switch Mode",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2000, 200],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "url": "=http://localhost:5000/api/bots/{{$('Create Test Bot').item.json.id}}",
+        "method": "DELETE",
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "id": "12",
+      "name": "Delete Test Bot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2220, 200],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [{"value1": "={{ $json.recommended_action }}", "value2": "restart_containers"}]
+        }
+      },
+      "id": "13",
+      "name": "Should Restart?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1560, 400]
+    },
+    {
+      "parameters": {
+        "authentication": "password",
+        "command": "cd /c/Users/ecoli/OneDrive/Documents/GitHub/moha-bot && docker-compose restart api frontend",
+        "cwd": "/"
+      },
+      "id": "14",
+      "name": "Restart Containers",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [1780, 400],
+      "credentials": {
+        "ssh": {
+          "id": "{{SSH_CREDENTIAL_ID}}",
+          "name": "localhost-ssh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const analysis = $('Parse AI Response').item.json;\nconst testResults = $('Delete Test Bot')?.item?.json || null;\nconst restartResult = $('Restart Containers')?.item?.json || null;\n\nconst report = {\n  timestamp: new Date().toISOString(),\n  container_analysis: analysis,\n  api_tests: testResults ? {\n    health_check: $('Check API Health')?.item?.json || null,\n    bot_created: $('Create Test Bot')?.item?.json || null,\n    mode_switched: $('Switch Mode')?.item?.json || null,\n    bot_deleted: testResults,\n    overall_status: testResults ? 'PASSED' : 'NOT_RUN'\n  } : null,\n  restart_performed: restartResult ? true : false,\n  restart_output: restartResult?.stdout || null\n};\n\nreturn [{json: report}];"
+      },
+      "id": "15",
+      "name": "Generate Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2440, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "password",
+        "command": "=cd /c/Users/ecoli/OneDrive/Documents/GitHub/moha-bot && mkdir -p logs && cat > logs/monitor-{{$now.toFormat('yyyy-MM-dd')}}.log << 'EOFLOG'\n{{JSON.stringify($json, null, 2)}}\nEOFLOG",
+        "cwd": "/"
+      },
+      "id": "16",
+      "name": "Save Report",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [2660, 300],
+      "credentials": {
+        "ssh": {
+          "id": "{{SSH_CREDENTIAL_ID}}",
+          "name": "localhost-ssh"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Every 10 Minutes": {
+      "main": [[
+        {"node": "Check Containers First", "type": "main", "index": 0},
+        {"node": "Get API Logs", "type": "main", "index": 0}
+      ]]
+    },
+    "Check Containers First": {
+      "main": [[{"node": "Prepare for AI", "type": "main", "index": 0}]]
+    },
+    "Get API Logs": {
+      "main": [[{"node": "Prepare for AI", "type": "main", "index": 0}]]
+    },
+    "Prepare for AI": {
+      "main": [[{"node": "Claude: Analyze Containers", "type": "main", "index": 0}]]
+    },
+    "Claude: Analyze Containers": {
+      "main": [[{"node": "Parse AI Response", "type": "main", "index": 0}]],
+      "ai_languageModel": [[{"node": "Claude Haiku", "type": "ai_languageModel", "index": 0}]]
+    },
+    "Parse AI Response": {
+      "main": [[
+        {"node": "Is API Available?", "type": "main", "index": 0},
+        {"node": "Should Restart?", "type": "main", "index": 0}
+      ]]
+    },
+    "Is API Available?": {
+      "main": [
+        [{"node": "Check API Health", "type": "main", "index": 0}],
+        [{"node": "Generate Report", "type": "main", "index": 0}]
+      ]
+    },
+    "Check API Health": {
+      "main": [[{"node": "Create Test Bot", "type": "main", "index": 0}]]
+    },
+    "Create Test Bot": {
+      "main": [[{"node": "Switch Mode", "type": "main", "index": 0}]]
+    },
+    "Switch Mode": {
+      "main": [[{"node": "Delete Test Bot", "type": "main", "index": 0}]]
+    },
+    "Delete Test Bot": {
+      "main": [[{"node": "Generate Report", "type": "main", "index": 0}]]
+    },
+    "Should Restart?": {
+      "main": [
+        [{"node": "Restart Containers", "type": "main", "index": 0}],
+        [{"node": "Generate Report", "type": "main", "index": 0}]
+      ]
+    },
+    "Restart Containers": {
+      "main": [[{"node": "Generate Report", "type": "main", "index": 0}]]
+    },
+    "Generate Report": {
+      "main": [[{"node": "Save Report", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {},
+  "settings": {"executionOrder": "v1"},
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-12-28T19:00:00.000Z",
+  "versionId": "1"
+}

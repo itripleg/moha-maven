@@ -1,0 +1,101 @@
+// app/motherbot/components/layout/MotherBotMainArea.tsx
+"use client";
+
+import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BalanceGraph } from "../BalanceGraph";
+import { BotActivityPanel } from "../BotActivityPanel";
+import { DecisionsFeed } from "../DecisionsFeed";
+import { PairSelector } from "../PairSelector";
+import { useBotAccount } from "../../hooks/useBotAccount";
+import {
+  TrendingUp,
+  Activity,
+  Brain,
+  BarChart3,
+} from "lucide-react";
+import type { BotStrategyMode, BalanceHistoryPoint } from "../../types";
+
+interface MotherBotMainAreaProps {
+  strategyMode: BotStrategyMode;
+  selectedPair: string;
+  onSelectPair: (pair: string) => void;
+}
+
+export function MotherBotMainArea({
+  strategyMode,
+  selectedPair,
+  onSelectPair,
+}: MotherBotMainAreaProps) {
+  const [activeTab, setActiveTab] = useState("overview");
+  const { account, loading } = useBotAccount();
+
+  // Mock balance history - in production, fetch from API
+  const balanceHistory: BalanceHistoryPoint[] = account
+    ? [
+        {
+          timestamp: new Date(Date.now() - 3600000 * 24).toISOString(),
+          balance_usd: 1000,
+          equity_usd: 1000,
+          total_pnl: 0,
+        },
+        {
+          timestamp: new Date().toISOString(),
+          balance_usd: account.balance_usd,
+          equity_usd: account.equity_usd,
+          total_pnl: account.total_pnl,
+        },
+      ]
+    : [];
+
+  return (
+    <div className="space-y-6">
+      {/* Pair Selector */}
+      <PairSelector
+        selectedPair={selectedPair}
+        onSelectPair={onSelectPair}
+        network="testnet"
+      />
+
+      {/* Main Content Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-3 h-10 bg-card/30 border border-primary/40">
+          <TabsTrigger value="overview" className="gap-1.5 text-xs">
+            <BarChart3 className="h-3.5 w-3.5" />
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="positions" className="gap-1.5 text-xs">
+            <Activity className="h-3.5 w-3.5" />
+            Positions
+          </TabsTrigger>
+          <TabsTrigger value="decisions" className="gap-1.5 text-xs">
+            <Brain className="h-3.5 w-3.5" />
+            AI Decisions
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="mt-4 space-y-6">
+          {/* Balance Graph */}
+          <BalanceGraph data={balanceHistory} loading={loading} />
+
+          {/* Positions Grid */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <BotActivityPanel selectedPair={selectedPair} />
+            <DecisionsFeed limit={5} selectedPair={selectedPair} />
+          </div>
+        </TabsContent>
+
+        {/* Positions Tab */}
+        <TabsContent value="positions" className="mt-4">
+          <BotActivityPanel selectedPair={selectedPair} />
+        </TabsContent>
+
+        {/* Decisions Tab */}
+        <TabsContent value="decisions" className="mt-4">
+          <DecisionsFeed limit={20} selectedPair={selectedPair} />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}

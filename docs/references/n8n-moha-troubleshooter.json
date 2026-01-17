@@ -1,0 +1,491 @@
+{
+  "name": "Moha-Bot Troubleshooter",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Schedule Every 15min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "password",
+        "resource": "command",
+        "operation": "execute",
+        "command": "cd /c/Users/ecoli/OneDrive/Documents/GitHub/moha-bot && docker-compose ps --format json",
+        "cwd": "/"
+      },
+      "id": "check-containers",
+      "name": "Check Container Status",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [450, 300],
+      "credentials": {
+        "ssh": {
+          "id": "1",
+          "name": "localhost-ssh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "// Parse docker-compose ps output and identify problem containers\nconst output = $input.first().json.stdout;\nconst lines = output.trim().split('\\n');\nconst problemContainers = [];\n\nfor (const line of lines) {\n  try {\n    const container = JSON.parse(line);\n    \n    // Check if container is not running or unhealthy\n    if (container.State !== 'running' || container.Health === 'unhealthy' || container.Status.includes('Exit')) {\n      problemContainers.push({\n        name: container.Name,\n        service: container.Service,\n        state: container.State,\n        status: container.Status,\n        health: container.Health || 'N/A'\n      });\n    }\n  } catch (e) {\n    // Skip invalid JSON lines\n  }\n}\n\nif (problemContainers.length === 0) {\n  return [{ json: { message: 'All containers healthy', hasProblems: false } }];\n}\n\nreturn problemContainers.map(c => ({ json: { ...c, hasProblems: true } }));"
+      },
+      "id": "parse-status",
+      "name": "Parse Container Status",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.hasProblems }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "has-problems",
+      "name": "Has Problems?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "password",
+        "resource": "command",
+        "operation": "execute",
+        "command": "=docker logs {{ $json.name }} --tail 100 2>&1",
+        "cwd": "/"
+      },
+      "id": "get-logs",
+      "name": "Get Container Logs",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [1050, 200],
+      "credentials": {
+        "ssh": {
+          "id": "1",
+          "name": "localhost-ssh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "// Analyze logs for common errors\nconst logs = $input.first().json.stdout;\nconst containerName = $input.first().json.name;\nconst service = $input.first().json.service;\n\nconst diagnostics = {\n  containerName,\n  service,\n  errors: [],\n  suggestedFixes: []\n};\n\n// Check for missing Python packages\nconst moduleNotFound = logs.match(/ModuleNotFoundError: No module named '([^']+)'/g);\nif (moduleNotFound) {\n  const missingModules = [...new Set(moduleNotFound.map(m => m.match(/'([^']+)'/)[1]))];\n  diagnostics.errors.push({\n    type: 'missing_dependency',\n    modules: missingModules,\n    message: `Missing Python packages: ${missingModules.join(', ')}`\n  });\n  diagnostics.suggestedFixes.push({\n    action: 'add_to_requirements',\n    modules: missingModules,\n    description: `Add ${missingModules.join(', ')} to requirements.txt and rebuild`\n  });\n}\n\n// Check for port conflicts\nif (logs.includes('Address already in use') || logs.includes('bind: address already in use')) {\n  diagnostics.errors.push({\n    type: 'port_conflict',\n    message: 'Port already in use'\n  });\n  diagnostics.suggestedFixes.push({\n    action: 'restart_container',\n    description: 'Restart the container to clear port binding'\n  });\n}\n\n// Check for database connection errors\nif (logs.includes('could not connect to server') || logs.includes('Connection refused') && logs.includes('5432')) {\n  diagnostics.errors.push({\n    type: 'database_connection',\n    message: 'Cannot connect to PostgreSQL database'\n  });\n  diagnostics.suggestedFixes.push({\n    action: 'check_db_container',\n    description: 'Ensure database container is running and healthy'\n  });\n}\n\n// Check for Redis connection errors\nif (logs.includes('Redis') && (logs.includes('Connection refused') || logs.includes('6379'))) {\n  diagnostics.errors.push({\n    type: 'redis_connection',\n    message: 'Cannot connect to Redis'\n  });\n  diagnostics.suggestedFixes.push({\n    action: 'check_redis_container',\n    description: 'Ensure Redis container is running and healthy'\n  });\n}\n\n// Check for network issues\nif (logs.includes('network') && logs.includes('not found')) {\n  diagnostics.errors.push({\n    type: 'network_issue',\n    message: 'Docker network issue detected'\n  });\n  diagnostics.suggestedFixes.push({\n    action: 'recreate_network',\n    description: 'Recreate Docker network: docker-compose down && docker-compose up'\n  });\n}\n\nreturn [{ json: diagnostics }];"
+      },
+      "id": "analyze-logs",
+      "name": "Analyze Logs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1250, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.errors.length }}",
+              "operation": "larger",
+              "value2": 0
+            }
+          ]
+        }
+      },
+      "id": "has-errors",
+      "name": "Has Errors?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1450, 200]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "string": [
+                  {
+                    "value1": "={{ $json.errors[0].type }}",
+                    "value2": "missing_dependency"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "missing_dependency"
+            },
+            {
+              "conditions": {
+                "string": [
+                  {
+                    "value1": "={{ $json.errors[0].type }}",
+                    "value2": "port_conflict"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "port_conflict"
+            },
+            {
+              "conditions": {
+                "string": [
+                  {
+                    "value1": "={{ $json.errors[0].type }}",
+                    "value2": "database_connection"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "database_connection"
+            },
+            {
+              "conditions": {
+                "string": [
+                  {
+                    "value1": "={{ $json.errors[0].type }}",
+                    "value2": "redis_connection"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "redis_connection"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "error-type-switch",
+      "name": "Error Type Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [1650, 200]
+    },
+    {
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "// Fix missing dependencies by updating requirements.txt\nconst service = $json.service;\nconst modules = $json.errors[0].modules;\nconst requirementsPath = `/c/Users/ecoli/OneDrive/Documents/GitHub/moha-bot/services/${service}/requirements.txt`;\n\n// Read current requirements\nconst readCmd = `cat ${requirementsPath}`;\nconst appendCmd = modules.map(m => `echo \"${m}\" >> ${requirementsPath}`).join(' && ');\nconst rebuildCmd = `cd /c/Users/ecoli/OneDrive/Documents/GitHub/moha-bot && docker-compose build ${service} && docker-compose up -d ${service}`;\n\nreturn [{\n  json: {\n    service,\n    modules,\n    requirementsPath,\n    commands: {\n      read: readCmd,\n      append: appendCmd,\n      rebuild: rebuildCmd\n    },\n    action: 'fix_dependencies'\n  }\n}];"
+      },
+      "id": "prepare-dependency-fix",
+      "name": "Prepare Dependency Fix",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1850, 100]
+    },
+    {
+      "parameters": {
+        "authentication": "password",
+        "resource": "command",
+        "operation": "execute",
+        "command": "={{ $json.commands.append }} && {{ $json.commands.rebuild }}",
+        "cwd": "/"
+      },
+      "id": "apply-dependency-fix",
+      "name": "Apply Dependency Fix",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [2050, 100],
+      "credentials": {
+        "ssh": {
+          "id": "1",
+          "name": "localhost-ssh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "password",
+        "resource": "command",
+        "operation": "execute",
+        "command": "=cd /c/Users/ecoli/OneDrive/Documents/GitHub/moha-bot && docker-compose restart {{ $json.service }}",
+        "cwd": "/"
+      },
+      "id": "restart-container",
+      "name": "Restart Container",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [1850, 200],
+      "credentials": {
+        "ssh": {
+          "id": "1",
+          "name": "localhost-ssh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "password",
+        "resource": "command",
+        "operation": "execute",
+        "command": "cd /c/Users/ecoli/OneDrive/Documents/GitHub/moha-bot && docker-compose ps db && docker-compose logs db --tail 20",
+        "cwd": "/"
+      },
+      "id": "check-db",
+      "name": "Check Database",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [1850, 300],
+      "credentials": {
+        "ssh": {
+          "id": "1",
+          "name": "localhost-ssh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "password",
+        "resource": "command",
+        "operation": "execute",
+        "command": "cd /c/Users/ecoli/OneDrive/Documents/GitHub/moha-bot && docker-compose ps redis && docker-compose logs redis --tail 20",
+        "cwd": "/"
+      },
+      "id": "check-redis",
+      "name": "Check Redis",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [1850, 400],
+      "credentials": {
+        "ssh": {
+          "id": "1",
+          "name": "localhost-ssh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "// Generate troubleshooting report\nconst allResults = $input.all();\nconst timestamp = new Date().toISOString();\n\nconst report = {\n  timestamp,\n  summary: {\n    totalIssues: allResults.length,\n    fixesApplied: allResults.filter(r => r.json.action).length\n  },\n  details: allResults.map(r => ({\n    container: r.json.containerName || r.json.service,\n    errors: r.json.errors || [],\n    fixes: r.json.suggestedFixes || [],\n    actionTaken: r.json.action || 'diagnostic_only'\n  }))\n};\n\nreturn [{ json: report }];"
+      },
+      "id": "generate-report",
+      "name": "Generate Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2250, 200]
+    },
+    {
+      "parameters": {
+        "authentication": "password",
+        "resource": "command",
+        "operation": "execute",
+        "command": "=echo '{{ JSON.stringify($json) }}' >> /c/Users/ecoli/OneDrive/Documents/GitHub/moha-bot/logs/troubleshooter-$(date +%Y%m%d).log",
+        "cwd": "/"
+      },
+      "id": "log-report",
+      "name": "Log Report",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [2450, 200],
+      "credentials": {
+        "ssh": {
+          "id": "1",
+          "name": "localhost-ssh"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Every 15min": {
+      "main": [
+        [
+          {
+            "node": "Check Container Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Container Status": {
+      "main": [
+        [
+          {
+            "node": "Parse Container Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Container Status": {
+      "main": [
+        [
+          {
+            "node": "Has Problems?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Problems?": {
+      "main": [
+        [
+          {
+            "node": "Get Container Logs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Container Logs": {
+      "main": [
+        [
+          {
+            "node": "Analyze Logs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Logs": {
+      "main": [
+        [
+          {
+            "node": "Has Errors?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Errors?": {
+      "main": [
+        [
+          {
+            "node": "Error Type Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Type Router": {
+      "main": [
+        [
+          {
+            "node": "Prepare Dependency Fix",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Restart Container",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Check Database",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Check Redis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Dependency Fix": {
+      "main": [
+        [
+          {
+            "node": "Apply Dependency Fix",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apply Dependency Fix": {
+      "main": [
+        [
+          {
+            "node": "Generate Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Restart Container": {
+      "main": [
+        [
+          {
+            "node": "Generate Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Database": {
+      "main": [
+        [
+          {
+            "node": "Generate Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Redis": {
+      "main": [
+        [
+          {
+            "node": "Generate Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Report": {
+      "main": [
+        [
+          {
+            "node": "Log Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-12-28T16:20:00.000Z",
+  "versionId": "1"
+}

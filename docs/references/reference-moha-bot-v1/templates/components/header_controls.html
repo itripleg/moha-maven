@@ -1,0 +1,41 @@
+<div class="header-controls-compact">
+    <!-- Network Toggle -->
+    <div class="network-toggle network-toggle-compact">
+        <button class="network-toggle-btn active mainnet" id="network-mainnet-btn" onclick="switchNetwork('mainnet')">Main</button>
+        <button class="network-toggle-btn testnet" id="network-testnet-btn" onclick="switchNetwork('testnet')">Test</button>
+    </div>
+
+    <!-- Time Stats -->
+    <div style="display: flex; gap: 12px;">
+        <div class="stat-compact">
+            <span class="label">Last Update</span>
+            <span class="value" id="last-update">Never</span>
+        </div>
+        <div class="stat-compact">
+            <span class="label">Next Cycle</span>
+            <span class="value" id="next-cycle-countdown" style="font-variant-numeric: tabular-nums;">--:--</span>
+        </div>
+    </div>
+
+    <!-- Bot Status -->
+    <div class="bot-status-compact bot-status-header">
+        <span class="status-indicator unknown" id="status-dot"></span>
+        <span id="status-text">Stopped</span>
+    </div>
+
+    <!-- Bot Controls -->
+    <div class="bot-controls">
+        <button class="bot-control-btn start-btn bot-control-compact" id="start-btn">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M5 3.5v9L12 8z"/>
+            </svg>
+            Start
+        </button>
+        <button class="bot-control-btn pause-btn bot-control-compact" id="pause-btn" style="display: none;">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M5 3h2v10H5V3zm4 0h2v10H9V3z"/>
+            </svg>
+            Pause
+        </button>
+    </div>
+</div>

@@ -1,0 +1,428 @@
+"""
+SQLite database layer for Motherhaven trading bot.
+
+This module provides database initialization and management for:
+- Standard Config Tables
+- Autonomous Data Tables
+- Position Data Tables
+- Bot Status Data Tables
+- Data Collection Categories
+"""
+
+import sqlite3
+import os
+from pathlib import Path
+from typing import Optional
+
+# Global database path
+_db_path: Optional[Path] = None
+
+
+def set_database_path(mode: str = "paper") -> None:
+    """Set the database file path based on trading mode."""
+    global _db_path
+    data_dir = Path(__file__).parent / "data"
+    data_dir.mkdir(exist_ok=True)
+    _db_path = data_dir / f"motherhaven_{mode}.db"
+    print(f"[DATABASE] Path set to: {_db_path}")
+
+
+def get_connection() -> sqlite3.Connection:
+    """Get a database connection."""
+    if _db_path is None:
+        raise RuntimeError("Database path not set. Call set_database_path() first.")
+
+    conn = sqlite3.connect(str(_db_path))
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def init_database() -> None:
+    """Initialize database schema."""
+    if _db_path is None:
+        raise RuntimeError("Database path not set. Call set_database_path() first.")
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    # ============================================================================
+    # STANDARD CONFIG TABLES
+    # ============================================================================
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS bot_config (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            key TEXT UNIQUE NOT NULL,
+            value TEXT NOT NULL,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    # ============================================================================
+    # POSITION DATA TABLES
+    # ============================================================================
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS positions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            asset TEXT NOT NULL,
+            side TEXT,
+            entry_price REAL,
+            current_price REAL,
+            size REAL,
+            leverage REAL,
+            pnl REAL,
+            pnl_percent REAL,
+            liquidation_price REAL,
+            margin_used REAL,
+            opened_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            closed_at TIMESTAMP,
+            status TEXT DEFAULT 'open'
+        )
+    """)
+
+    # ============================================================================
+    # TA DATA TABLES
+    # ============================================================================
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS candles (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            asset TEXT NOT NULL,
+            timeframe TEXT NOT NULL,
+            timestamp TIMESTAMP NOT NULL,
+            open REAL NOT NULL,
+            high REAL NOT NULL,
+            low REAL NOT NULL,
+            close REAL NOT NULL,
+            volume REAL,
+            UNIQUE(asset, timeframe, timestamp)
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS indicators (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            asset TEXT NOT NULL,
+            timeframe TEXT NOT NULL,
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            indicator_type TEXT NOT NULL,
+            value REAL,
+            metadata TEXT,
+            UNIQUE(asset, timeframe, timestamp, indicator_type)
+        )
+    """)
+
+    # ============================================================================
+    # AUTONOMOUS DATA TABLES
+    # ============================================================================
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS trading_decisions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            asset TEXT NOT NULL,
+            decision TEXT NOT NULL,
+            reasoning TEXT,
+            confidence REAL,
+            strategy_mode TEXT,
+            cycle_number INTEGER
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS market_snapshots (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            asset TEXT NOT NULL,
+            price REAL,
+            volume_24h REAL,
+            funding_rate REAL,
+            open_interest REAL,
+            data JSON
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS visions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            asset TEXT NOT NULL,
+            vision_text TEXT,
+            market_context TEXT,
+            ta_summary TEXT
+        )
+    """)
+
+    # ============================================================================
+    # BOT STATUS DATA TABLES
+    # ============================================================================
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS bot_status (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            state TEXT NOT NULL,
+            cycle_count INTEGER,
+            error_message TEXT,
+            active_positions INTEGER,
+            total_pnl REAL
+        )
+    """)
+
+    # ============================================================================
+    # PROMPT STORAGE TABLES
+    # ============================================================================
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS prompts_cooperative (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            prompt_text TEXT NOT NULL,
+            active BOOLEAN DEFAULT 1
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS prompts_hedging (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            prompt_text TEXT NOT NULL,
+            active BOOLEAN DEFAULT 1
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS prompts_entry_exit (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            prompt_text TEXT NOT NULL,
+            active BOOLEAN DEFAULT 1
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS prompts_date_collecting (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            prompt_text TEXT NOT NULL,
+            active BOOLEAN DEFAULT 1
+        )
+    """)
+
+    conn.commit()
+    conn.close()
+
+    print(f"[DATABASE] Schema initialized at {_db_path}")
+
+
+def query_latest_positions(limit: int = 10) -> list:
+    """Query latest positions."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT * FROM positions
+        ORDER BY opened_at DESC
+        LIMIT ?
+    """, (limit,))
+    results = cursor.fetchall()
+    conn.close()
+    return [dict(row) for row in results]
+
+
+def save_trading_decision(asset: str, decision: str, reasoning: str = "", confidence: float = 0.0, strategy_mode: str = None, cycle_number: int = None) -> None:
+    """Save a trading decision to the database."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO trading_decisions (asset, decision, reasoning, confidence, strategy_mode, cycle_number)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (asset, decision, reasoning, confidence, strategy_mode, cycle_number))
+    conn.commit()
+    conn.close()
+
+
+# ============================================================================
+# CANDLE DATA FUNCTIONS
+# ============================================================================
+
+def save_candle(asset: str, timeframe: str, timestamp: str, open: float, high: float, low: float, close: float, volume: float = None) -> None:
+    """Save a candle to the database."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT OR REPLACE INTO candles (asset, timeframe, timestamp, open, high, low, close, volume)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (asset, timeframe, timestamp, open, high, low, close, volume))
+    conn.commit()
+    conn.close()
+
+
+def query_candles(asset: str, timeframe: str, limit: int = 100) -> list:
+    """Query recent candles for an asset and timeframe."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT * FROM candles
+        WHERE asset = ? AND timeframe = ?
+        ORDER BY timestamp DESC
+        LIMIT ?
+    """, (asset, timeframe, limit))
+    results = cursor.fetchall()
+    conn.close()
+    return [dict(row) for row in results]
+
+
+# ============================================================================
+# INDICATOR FUNCTIONS
+# ============================================================================
+
+def save_indicator(asset: str, timeframe: str, indicator_type: str, value: float, metadata: str = None) -> None:
+    """Save an indicator value to the database."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT OR REPLACE INTO indicators (asset, timeframe, indicator_type, value, metadata)
+        VALUES (?, ?, ?, ?, ?)
+    """, (asset, timeframe, indicator_type, value, metadata))
+    conn.commit()
+    conn.close()
+
+
+def query_indicators(asset: str, timeframe: str, indicator_type: str = None, limit: int = 100) -> list:
+    """Query indicators for an asset."""
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    if indicator_type:
+        cursor.execute("""
+            SELECT * FROM indicators
+            WHERE asset = ? AND timeframe = ? AND indicator_type = ?
+            ORDER BY timestamp DESC
+            LIMIT ?
+        """, (asset, timeframe, indicator_type, limit))
+    else:
+        cursor.execute("""
+            SELECT * FROM indicators
+            WHERE asset = ? AND timeframe = ?
+            ORDER BY timestamp DESC
+            LIMIT ?
+        """, (asset, timeframe, limit))
+
+    results = cursor.fetchall()
+    conn.close()
+    return [dict(row) for row in results]
+
+
+# ============================================================================
+# MARKET SNAPSHOT FUNCTIONS
+# ============================================================================
+
+def save_market_snapshot(asset: str, price: float, volume_24h: float = None, funding_rate: float = None, open_interest: float = None, data: str = None) -> None:
+    """Save a market snapshot."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO market_snapshots (asset, price, volume_24h, funding_rate, open_interest, data)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (asset, price, volume_24h, funding_rate, open_interest, data))
+    conn.commit()
+    conn.close()
+
+
+def query_market_snapshots(asset: str, limit: int = 100) -> list:
+    """Query recent market snapshots."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT * FROM market_snapshots
+        WHERE asset = ?
+        ORDER BY timestamp DESC
+        LIMIT ?
+    """, (asset, limit))
+    results = cursor.fetchall()
+    conn.close()
+    return [dict(row) for row in results]
+
+
+# ============================================================================
+# VISION FUNCTIONS
+# ============================================================================
+
+def save_vision(asset: str, vision_text: str, market_context: str = None, ta_summary: str = None) -> None:
+    """Save a trading vision."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO visions (asset, vision_text, market_context, ta_summary)
+        VALUES (?, ?, ?, ?)
+    """, (asset, vision_text, market_context, ta_summary))
+    conn.commit()
+    conn.close()
+
+
+def query_visions(asset: str, limit: int = 10) -> list:
+    """Query recent visions."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT * FROM visions
+        WHERE asset = ?
+        ORDER BY timestamp DESC
+        LIMIT ?
+    """, (asset, limit))
+    results = cursor.fetchall()
+    conn.close()
+    return [dict(row) for row in results]
+
+
+# ============================================================================
+# PROMPT MANAGEMENT FUNCTIONS
+# ============================================================================
+
+def save_prompt(prompt_type: str, prompt_text: str) -> int:
+    """Save a prompt to the appropriate table."""
+    table_map = {
+        'cooperative': 'prompts_cooperative',
+        'hedging': 'prompts_hedging',
+        'entry_exit': 'prompts_entry_exit',
+        'date_collecting': 'prompts_date_collecting'
+    }
+
+    if prompt_type not in table_map:
+        raise ValueError(f"Invalid prompt_type: {prompt_type}")
+
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(f"""
+        INSERT INTO {table_map[prompt_type]} (prompt_text)
+        VALUES (?)
+    """, (prompt_text,))
+    prompt_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+    return prompt_id
+
+
+def query_active_prompts(prompt_type: str) -> list:
+    """Query active prompts of a specific type."""
+    table_map = {
+        'cooperative': 'prompts_cooperative',
+        'hedging': 'prompts_hedging',
+        'entry_exit': 'prompts_entry_exit',
+        'date_collecting': 'prompts_date_collecting'
+    }
+
+    if prompt_type not in table_map:
+        raise ValueError(f"Invalid prompt_type: {prompt_type}")
+
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(f"""
+        SELECT * FROM {table_map[prompt_type]}
+        WHERE active = 1
+        ORDER BY created_at DESC
+    """)
+    results = cursor.fetchall()
+    conn.close()
+    return [dict(row) for row in results]
