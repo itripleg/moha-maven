@@ -172,3 +172,36 @@ Brief description with key details.
 - Key decisions stored in decisions/
 - Milestones stored in milestones/
 - Compacted on 2026-01-16 to reduce bloat
+
+## [2026-01-17T20:29:50.332321+00:00] GIT_SYNC
+
+Synced 3 files from git remote: identity.json, session_log.md, infrastructure.json
+
+**Metadata:** {"synced": ["identity.json", "session_log.md", "infrastructure.json"], "skipped": [], "errors": [], "force": true}
+
+---
+
+## [2026-01-17T22:11:34.727151+00:00] MILESTONE
+
+Implemented Recursive Language Model (RLM) capability based on MIT CSAIL paper arXiv:2512.24601v1.
+
+Key components added:
+1. **RLMContext class** - Manages context as external environment variable with chunking, search, and statistics
+2. **llm_query() function** - Spawns sub-LM calls over context chunks with cost tracking
+3. **Processing strategies**:
+   - map_reduce: For aggregation tasks across all chunks
+   - search_extract: For needle-in-haystack tasks
+   - iterative: For cumulative understanding
+   - smart: Auto-selects best strategy
+4. **Financial analysis helpers** - Maven-specific prompts for CFO tasks
+5. **MCP Tools**:
+   - maven_rlm_query: Process arbitrarily long contexts (10M+ tokens)
+   - maven_rlm_analyze_documents: Analyze multiple financial documents
+
+This enables Maven to process documents 2 orders of magnitude beyond normal context limits while maintaining quality and reducing cost compared to brute-force context expansion.
+
+Reference: Zhang et al., "Recursive Language Models" MIT CSAIL, Dec 2025
+
+**Metadata:** {"paper": "arXiv:2512.24601v1", "files_created": ["maven_mcp/rlm.py", "maven_mcp/tests/test_rlm.py"], "files_modified": ["maven_mcp/tools.py"], "capabilities": ["map_reduce", "search_extract", "iterative", "smart"], "max_context": "10M+ tokens"}
+
+---

@@ -13,6 +13,8 @@ Tools:
 5. maven_get_stats - Read-only stats query for performance/decisions/milestones
 6. maven_query_email - Query motherhaven.app inbox with search/limit/from filters
 7. maven_send_email - Send emails via motherhaven.app API
+8. maven_rlm_query - Process long contexts using Recursive Language Model paradigm
+9. maven_rlm_analyze_documents - Analyze multiple documents with RLM for financial insights
 """
 import json
 import logging
@@ -23,6 +25,14 @@ import requests
 from mcp.types import Tool, TextContent
 
 from .config import PATHS, get_iso_timestamp, deep_merge, ensure_directories, GIT_REMOTE_CONFIG
+
+# RLM imports for recursive language model capabilities
+try:
+    from .rlm import rlm_query, analyze_financial_documents
+    RLM_AVAILABLE = True
+except ImportError as e:
+    RLM_AVAILABLE = False
+    logging.warning(f"RLM module not available: {e}")
 
 # Database imports for dual persistence
 try:
@@ -235,6 +245,61 @@ TOOLS: List[Tool] = [
                 }
             },
             "required": []
+        }
+    ),
+    Tool(
+        name="maven_rlm_query",
+        description="Process arbitrarily long contexts using the Recursive Language Model (RLM) paradigm. Treats context as external environment variable, enabling processing of documents far beyond normal context limits (10M+ tokens).",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "The question or task to answer using the context"
+                },
+                "context": {
+                    "type": "string",
+                    "description": "The (potentially very long) context to process - can be millions of characters"
+                },
+                "strategy": {
+                    "type": "string",
+                    "enum": ["map_reduce", "search_extract", "iterative", "smart"],
+                    "description": "Processing strategy: map_reduce (aggregate all), search_extract (find specific info), iterative (cumulative), smart (auto-select)"
+                },
+                "chunk_size": {
+                    "type": "integer",
+                    "description": "Size of each chunk in characters (default: 200000)"
+                },
+                "search_patterns": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Regex patterns for search_extract strategy"
+                }
+            },
+            "required": ["query", "context"]
+        }
+    ),
+    Tool(
+        name="maven_rlm_analyze_documents",
+        description="Analyze multiple financial documents using RLM for comprehensive financial insights. Optimized for Maven's CFO role with financial-specific prompts.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "documents": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "List of document contents to analyze"
+                },
+                "query": {
+                    "type": "string",
+                    "description": "Financial analysis query (e.g., 'What are the key risk factors?')"
+                },
+                "document_separator": {
+                    "type": "string",
+                    "description": "Separator between documents (default: '\\n\\n---DOCUMENT---\\n\\n')"
+                }
+            },
+            "required": ["documents", "query"]
         }
     ),
 ]
@@ -1387,5 +1452,55 @@ def register_tools(mcp_server) -> None:
         """Sync Maven's memory from git remote when local MCP state is stale. Fetches identity, session_log, and infrastructure from GitHub."""
         result = _sync_from_git(force=force)
         return json.dumps(result, indent=2)
+
+    @mcp_server.tool()
+    async def maven_rlm_query(
+        query: str,
+        context: str,
+        strategy: str = "map_reduce",
+        chunk_size: Optional[int] = None,
+        search_patterns: Optional[List[str]] = None
+    ) -> str:
+        """Process arbitrarily long contexts using the Recursive Language Model (RLM) paradigm."""
+        if not RLM_AVAILABLE:
+            return json.dumps({
+                "success": False,
+                "error": "RLM module not available. Check anthropic package installation."
+            }, indent=2)
+
+        kwargs = {}
+        if chunk_size:
+            kwargs["chunk_size"] = chunk_size
+        if search_patterns:
+            kwargs["search_patterns"] = search_patterns
+
+        result = rlm_query(
+            query=query,
+            context=context,
+            strategy=strategy,
+            **kwargs
+        )
+        return json.dumps(result, indent=2, default=str)
+
+    @mcp_server.tool()
+    async def maven_rlm_analyze_documents(
+        documents: List[str],
+        query: str,
+        document_separator: Optional[str] = None
+    ) -> str:
+        """Analyze multiple financial documents using RLM for comprehensive financial insights."""
+        if not RLM_AVAILABLE:
+            return json.dumps({
+                "success": False,
+                "error": "RLM module not available. Check anthropic package installation."
+            }, indent=2)
+
+        separator = document_separator or "\n\n---DOCUMENT---\n\n"
+        result = analyze_financial_documents(
+            documents=documents,
+            query=query,
+            document_separator=separator
+        )
+        return json.dumps(result, indent=2, default=str)
 
     logger.info(f"Registered {len(TOOLS)} Maven tools")
