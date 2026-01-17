@@ -1,0 +1,29 @@
+{
+  "hooks": [
+    {
+      "event": "on_tool_start",
+      "tool": "*decision*",
+      "description": "Log when Maven makes a trading decision",
+      "action": {
+        "type": "log",
+        "message": "Maven decision initiated: ${tool_name}"
+      }
+    },
+    {
+      "event": "on_session_start",
+      "description": "Load Maven's identity and recent memory on session start",
+      "action": {
+        "type": "prompt",
+        "content": "Load Maven's identity from maven://identity and recent events from maven://memory to restore context."
+      }
+    },
+    {
+      "event": "on_error",
+      "description": "Log errors for learning",
+      "action": {
+        "type": "log",
+        "message": "Error encountered: ${error_message} - logging for reflection"
+      }
+    }
+  ]
+}

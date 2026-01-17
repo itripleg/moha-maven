@@ -1,0 +1,22 @@
+{
+  "mcpServers": {
+    "maven": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["-m", "maven_mcp.server"],
+      "cwd": "${pluginDir}/../..",
+      "env": {
+        "MAVEN_MCP_PORT": "3100",
+        "MAVEN_BASE_DIR": "${pluginDir}/../.."
+      },
+      "description": "Maven's core MCP server - identity, memory, decisions, email"
+    },
+    "hyperliquid": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["main.py"],
+      "cwd": "${pluginDir}/../../services/hyperliquid-mcp",
+      "description": "Hyperliquid market data MCP - prices, orderbooks, positions"
+    }
+  }
+}

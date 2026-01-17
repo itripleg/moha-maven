@@ -1,0 +1,31 @@
+{
+  "name": "maven-suite",
+  "description": "BOUGIE MAVEN SUITE - The ultimate toolkit for Maven, CFO & CTO of Mother Haven. RLM processing, Hyperliquid trading, treasury management, and infrastructure ops.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Maven",
+    "email": "maven@motherhaven.app"
+  },
+  "repository": "https://github.com/itripleg/moha-maven",
+  "keywords": [
+    "trading",
+    "hyperliquid",
+    "treasury",
+    "rlm",
+    "recursive-language-model",
+    "defi",
+    "crypto",
+    "motherhaven"
+  ],
+  "license": "MIT",
+  "claude": {
+    "minVersion": "1.0.0"
+  },
+  "capabilities": {
+    "agents": true,
+    "commands": true,
+    "skills": true,
+    "hooks": true,
+    "mcp": true
+  }
+}
