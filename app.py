@@ -20,6 +20,9 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 CORS(app)
 
+# Maven base directory for accessing git-first data
+MAVEN_BASE_DIR = os.getenv('MAVEN_BASE_DIR', '/app')
+
 # Database connection (lazy load)
 _db_connection = None
 
@@ -406,6 +409,130 @@ def decision_performance():
         })
     except Exception as e:
         logger.error(f"Decision performance error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+# =============================================================================
+# MCP Resource Endpoints (HTTP Access to MCP Data)
+# =============================================================================
+
+@app.route('/api/mcp/identity', methods=['GET'])
+def mcp_identity():
+    """Get Maven's identity (mirrors maven://identity MCP resource)."""
+    try:
+        identity_path = os.path.join(MAVEN_BASE_DIR, '.moha', 'maven', 'identity.json')
+        if os.path.exists(identity_path):
+            with open(identity_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            return jsonify(data)
+        else:
+            return jsonify({
+                'name': 'Maven',
+                'role': 'AI CFO',
+                'status': 'initializing',
+                'total_decisions': 0,
+                'rebirth_count': 0
+            })
+    except Exception as e:
+        logger.error(f"Identity read error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/mcp/memory', methods=['GET'])
+def mcp_memory():
+    """Get Maven's session log (mirrors maven://memory MCP resource)."""
+    try:
+        memory_path = os.path.join(MAVEN_BASE_DIR, '.moha', 'maven', 'session_log.md')
+        lines = request.args.get('lines', type=int)  # Optional: return last N lines
+
+        if os.path.exists(memory_path):
+            with open(memory_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            if lines:
+                # Return last N lines
+                all_lines = content.splitlines()
+                content = '\n'.join(all_lines[-lines:])
+
+            return content, 200, {'Content-Type': 'text/markdown; charset=utf-8'}
+        else:
+            return "# Maven Session Log\n\nNo events recorded yet.", 200, {
+                'Content-Type': 'text/markdown; charset=utf-8'
+            }
+    except Exception as e:
+        logger.error(f"Memory read error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/mcp/infrastructure', methods=['GET'])
+def mcp_infrastructure():
+    """Get Maven's infrastructure knowledge (mirrors maven://infrastructure MCP resource)."""
+    try:
+        infra_path = os.path.join(MAVEN_BASE_DIR, '.moha', 'maven', 'infrastructure.json')
+        if os.path.exists(infra_path):
+            with open(infra_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            return jsonify(data)
+        else:
+            return jsonify({'error': 'Infrastructure data not found'}), 404
+    except Exception as e:
+        logger.error(f"Infrastructure read error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/mcp/decisions/recent', methods=['GET'])
+def mcp_recent_decisions():
+    """Get Maven's recent decisions (mirrors maven://decisions MCP resource)."""
+    try:
+        decisions_dir = os.path.join(MAVEN_BASE_DIR, '.moha', 'maven', 'decisions')
+        limit = request.args.get('limit', 10, type=int)
+
+        if os.path.exists(decisions_dir):
+            # Get all decision files sorted by modification time
+            decision_files = []
+            for filename in os.listdir(decisions_dir):
+                if filename.endswith('.md') and filename != '.gitkeep':
+                    filepath = os.path.join(decisions_dir, filename)
+                    decision_files.append((filepath, os.path.getmtime(filepath)))
+
+            # Sort by modification time (newest first)
+            decision_files.sort(key=lambda x: x[1], reverse=True)
+
+            # Read recent decisions
+            decisions = []
+            for filepath, _ in decision_files[:limit]:
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    decisions.append({
+                        'filename': os.path.basename(filepath),
+                        'content': f.read()
+                    })
+
+            return jsonify({
+                'count': len(decisions),
+                'decisions': decisions
+            })
+        else:
+            return jsonify({'count': 0, 'decisions': []})
+    except Exception as e:
+        logger.error(f"Recent decisions read error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/mcp/trading-setup', methods=['GET'])
+def mcp_trading_setup():
+    """Get Maven's trading setup documentation."""
+    try:
+        setup_path = os.path.join(MAVEN_BASE_DIR, '.moha', 'maven', 'TRADING_SETUP.md')
+        if os.path.exists(setup_path):
+            with open(setup_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            return content, 200, {'Content-Type': 'text/markdown; charset=utf-8'}
+        else:
+            return "# Trading Setup\n\nNo setup documentation found.", 200, {
+                'Content-Type': 'text/markdown; charset=utf-8'
+            }
+    except Exception as e:
+        logger.error(f"Trading setup read error: {e}")
         return jsonify({'error': str(e)}), 500
 
 
