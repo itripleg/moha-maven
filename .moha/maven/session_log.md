@@ -588,3 +588,87 @@ Remote origin/master updated.
 **Metadata:** {"commits": 25, "lines_changed": 14500, "files_changed": 69, "branch": "master", "remote": "origin/master"}
 
 ---
+
+## [2026-01-19T11:58:26.680426+00:00] SYSTEM_UPDATE
+
+Updated System dashboard to show Maven CFO widget instead of generic MCP widget. The dashboard now displays my MCP Server status, Flask API status, decision count, and rebirth count. Uses the /api/maven/status endpoint through moha_backend with direct fallback to port 5002.
+
+**Metadata:** {"commit": "9aae902", "changes": ["Replaced MCP Server widget with Maven CFO widget", "Added loadMavenStatus() JavaScript function", "Shows rebirth count and decision count", "Uses API proxy with direct fallback"]}
+
+---
+
+## [2026-01-19T13:03:38.648202+00:00] MILESTONE
+
+n8n MCP Integration Complete - Set up n8n workflow automation with 20 MCP tools configured. Components: maven_n8n (workflow UI on port 5679), maven_n8n_mcp (MCP server with API access on port 5678). Ready to create automated money flows programmatically. First target: Hyperliquid price alert system.
+
+**Metadata:** {"containers": ["maven_n8n", "maven_n8n_mcp"], "ports": {"n8n_ui": 5679, "n8n_mcp": 5678}, "tools_available": 20, "network": "moha-maven_maven_net", "next_step": "Create Hyperliquid price alert flow"}
+
+---
+
+## [2026-01-19T17:45:42.763357+00:00] TECHNICAL_DEBT_AUDIT
+
+Code cleanup audit completed for moha-bot. Major findings:
+
+CRITICAL:
+- sync_discovered_assets() duplicated in moha-bot AND moha-core (99% identical)
+- observation_mode.py is 1428 lines with mixed concerns
+
+HIGH PRIORITY DEPRECATION:
+1. observation_mode.py:21-50 - Redis utils (duplicate of connection.py)
+2. observation_mode.py:308-370 - Dead wrapper functions
+3. observation_mode.py:1001-1429 - Bot lifecycle (belongs in motherbot)
+4. warden.py:717-1022 - Final Boss unlock system (1300 lines of gamification code in position watcher!)
+5. database/bots.py add_discovered_asset/remove_discovered_asset wrappers
+
+MEDIUM:
+- auto_add_discovered_assets() in observation_mode.py imports from wrong module
+- Bot type vs trading_mode confusion
+
+KEEP AS-IS:
+- observed_positions.py - clean, no duplication
+- fills_sync.py - solid implementation
+- Warden core (WatcherThread) - canonical observer
+
+**Metadata:** {"audit_date": "2026-01-19", "files_reviewed": ["observation_mode.py", "warden.py", "fills_sync.py", "database/bots.py", "database/observed_positions.py"]}
+
+---
+
+## [2026-01-19T18:15:54.969338+00:00] ARCHITECTURE_PLANNING
+
+Documented bot restructure plan: Extract CLI to standalone moha-bots/cli that can control all bot types (HL perps via moha-bot, Avalanche DEX via dex-bot). dex-bot is NOT being deprecated - it's for moha-next DEX. moha-core has unused dex scaffolding that needs activation. Plan saved to .moha/architecture/bot-restructure-plan.md
+
+**Metadata:** {"plan_file": ".moha/architecture/bot-restructure-plan.md", "phases": ["extract_cli", "integrate_dex", "unified_orchestration"]}
+
+---
+
+## [2026-01-19T18:29:11.645894+00:00] ARCHITECTURE
+
+CLI Extraction Complete - Phase 1 of bot restructure done. moha-bots/cli is now standalone, moha-bot/cli deprecated.
+
+**Metadata:** {"phase": 1, "files_created": ["moha-bots/cli/", "moha-bots/pyproject.toml"], "files_modified": ["moha-bot/cli/__init__.py", ".moha/architecture/bot-restructure-plan.md"]}
+
+---
+
+## [2026-01-19T19:02:53.333721+00:00] BUGFIX
+
+Fixed multiple frontend/backend issues: 1) Toast stacking - now stack properly with deduplication 2) Decisions endpoint - now returns empty array for non-motherbot bots instead of error 3) Motherbot intervals - set to 30 minutes (1800s) to reduce token burn
+
+**Metadata:** {"fixes": ["toast_stacking", "decisions_endpoint", "motherbot_interval"], "motherbot_interval_seconds": 1800}
+
+---
+
+## [2026-01-19T19:25:38.792126+00:00] DEVIATION_AUDIT
+
+Conducting ecosystem fragmentation audit per Boss's request. Analyzing deviation from unification plan.
+
+**Metadata:** {"trigger": "boss_request", "date": "2026-01-19"}
+
+---
+
+## [2026-01-19T20:06:25.439056+00:00] MILESTONE
+
+Created comprehensive UNIFICATION-SPEC.md for monorepo migration. 7 phases, 808 lines, detailed checklists for agent sessions. Target: merge motherhaven-ecosystem into single motherhaven repo with Next.js at root and Python services in services/.
+
+**Metadata:** {"commit": "9133cd1", "file": ".moha/architecture/UNIFICATION-SPEC.md", "phases": 7, "lines": 808}
+
+---

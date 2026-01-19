@@ -67,6 +67,7 @@ nul
 
 # Claude local settings (keep example, ignore local)
 .claude/settings.local.json
+.claude-plugin/.claude/
 
 # Auto Claude data directory
 .auto-claude/

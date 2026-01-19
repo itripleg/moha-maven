@@ -3,6 +3,14 @@
     "maven": {
       "command": "docker",
       "args": ["exec", "-i", "maven", "python", "-m", "maven_mcp.server"]
+    },
+    "n8n": {
+      "command": "cmd",
+      "args": ["/c", "docker exec -i maven_n8n_mcp node /app/dist/index.js"],
+      "env": {
+        "N8N_API_URL": "http://maven_n8n:5678",
+        "N8N_API_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4MjI1NDk1OS0zODk1LTQzYzMtYmQ1MS0wMzc2ZDA1YWRlYjMiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzY4ODI3NTM5fQ.i6KXipCL1wBuhbneeNOrBJ0Kz89I4mkNt43YsluU-qM"
+      }
     }
   }
 }
