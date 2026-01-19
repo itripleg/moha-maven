@@ -2,12 +2,20 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install git (needed for git persistence)
+# Install system dependencies: git, Node.js, npm, curl
 RUN apt-get update && \
-    apt-get install -y git && \
+    apt-get install -y git curl && \
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install
+# Verify Node.js installation
+RUN node --version && npm --version
+
+# Install Claude Code CLI globally
+RUN npm install -g @anthropic-ai/claude-code
+
+# Copy requirements and install Python deps
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 

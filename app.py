@@ -23,20 +23,30 @@ CORS(app)
 # Maven base directory for accessing git-first data
 MAVEN_BASE_DIR = os.getenv('MAVEN_BASE_DIR', '/app')
 
-# Database connection (lazy load)
-_db_connection = None
+# Import database connection context manager
+try:
+    from database.connection import get_db_connection as _get_db_connection
+    CLAUDE_DB_AVAILABLE = True
+except Exception as e:
+    logger.error(f"Database import failed: {e}")
+    _get_db_connection = None
+    CLAUDE_DB_AVAILABLE = False
+
+# Import email sending function
+try:
+    from maven_mcp.tools import _send_email
+    EMAIL_AVAILABLE = True
+except Exception as e:
+    logger.error(f"Email tools import failed: {e}")
+    _send_email = None
+    EMAIL_AVAILABLE = False
 
 def get_db():
-    """Get database connection."""
-    global _db_connection
-    if _db_connection is None:
-        try:
-            from database.connection import get_connection
-            _db_connection = get_connection()
-        except Exception as e:
-            logger.error(f"Database connection failed: {e}")
-            return None
-    return _db_connection
+    """Get database connection (returns connection object from pool)."""
+    if not _get_db_connection:
+        return None
+    # Return a connection from the pool directly (not context manager)
+    return _get_db_connection().__enter__()
 
 @app.route('/health', methods=['GET'])
 def health_check():
@@ -334,6 +344,228 @@ def record_signal():
 # =============================================================================
 # DECISIONS ENDPOINTS
 # =============================================================================
+
+@app.route('/api/notifications/send', methods=['POST'])
+def send_notification():
+    """
+    Send high-confidence signal notification via email.
+
+    Called by moha-bot Maven scanner when confidence >= threshold.
+    Uses Maven's MCP email tool to send from maven@motherhaven.app.
+
+    Request body:
+        {
+            "opportunities": [...],  # List of high-confidence opportunities
+            "confidence_threshold": 90,
+            "recipient": "email@example.com"
+        }
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'Request body required'}), 400
+
+        opportunities = data.get('opportunities', [])
+        recipient = data.get('recipient')
+        confidence_threshold = data.get('confidence_threshold', 90)
+
+        if not opportunities:
+            return jsonify({'error': 'No opportunities provided'}), 400
+
+        if not recipient:
+            return jsonify({'error': 'Recipient email required'}), 400
+
+        # Build email content
+        subject = _build_notification_subject(opportunities)
+        html_content = _build_notification_html(opportunities, confidence_threshold)
+        text_content = _build_notification_text(opportunities, confidence_threshold)
+
+        # Send email via maven_send_email
+        logger.info(f"📧 HIGH-CONFIDENCE ALERT: {len(opportunities)} signals >= {confidence_threshold}%")
+        logger.info(f"To: {recipient}")
+        logger.info(f"Subject: {subject}")
+
+        # Actually send the email
+        if EMAIL_AVAILABLE and _send_email:
+            email_result = _send_email(
+                to=recipient,
+                subject=subject,
+                html_content=html_content,
+                text_content=text_content,
+                from_name="Maven",
+                from_email="maven@motherhaven.app"
+            )
+
+            if email_result.get('success'):
+                logger.info(f"✅ Email sent successfully to {recipient}")
+                return jsonify({
+                    'status': 'sent',
+                    'message': f'Email sent for {len(opportunities)} high-confidence signals',
+                    'recipient': recipient,
+                    'signal_count': len(opportunities)
+                })
+            else:
+                # Email failed - queue for retry
+                logger.error(f"❌ Email send failed: {email_result.get('error')}")
+                _queue_notification(recipient, subject, html_content, text_content, opportunities)
+                return jsonify({
+                    'status': 'queued',
+                    'message': f'Email failed, queued for retry: {email_result.get("error")}',
+                    'recipient': recipient,
+                    'signal_count': len(opportunities)
+                })
+        else:
+            # Email not available - queue for manual pickup
+            logger.warning("Email tools not available, queuing notification")
+            _queue_notification(recipient, subject, html_content, text_content, opportunities)
+            return jsonify({
+                'status': 'queued',
+                'message': f'Notification queued (email tools unavailable)',
+                'recipient': recipient,
+                'signal_count': len(opportunities)
+            })
+
+    except Exception as e:
+        logger.error(f"Notification send error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+def _build_notification_subject(opportunities):
+    """Build notification email subject."""
+    if len(opportunities) == 1:
+        opp = opportunities[0]
+        return f"🚨 Maven Alert: {opp['asset']} - {opp['maven_confidence']}% Confidence"
+    else:
+        max_conf = max(opp['maven_confidence'] for opp in opportunities)
+        return f"🚨 Maven Alert: {len(opportunities)} High-Confidence Signals (up to {max_conf}%)"
+
+
+def _build_notification_html(opportunities, threshold):
+    """Build HTML email content for notifications."""
+    opps_html = ""
+    for i, opp in enumerate(opportunities, 1):
+        conf_color = "#10b981" if opp['maven_confidence'] >= 95 else "#f59e0b"
+        funding_info = f"<li><strong>Funding APR:</strong> {opp.get('funding_apr', 0):.1f}%</li>" if opp.get('funding_apr') else ""
+
+        opps_html += f"""
+        <div style="background: #1f2937; border-left: 4px solid {conf_color}; padding: 16px; margin-bottom: 16px; border-radius: 4px;">
+            <h3 style="margin: 0 0 12px 0; color: #f3f4f6;">#{i}: {opp['asset']}</h3>
+            <ul style="color: #d1d5db; line-height: 1.6; margin: 0; padding-left: 20px;">
+                <li><strong>Confidence:</strong> <span style="color: {conf_color}; font-size: 18px; font-weight: bold;">{opp['maven_confidence']}%</span></li>
+                <li><strong>Score:</strong> {opp.get('maven_score', 0):.2f}</li>
+                <li><strong>Type:</strong> {opp.get('opportunity_type', 'N/A')}</li>
+                <li><strong>Risk:</strong> {opp.get('risk_level', 'MEDIUM')}</li>
+                <li><strong>Size:</strong> ${opp.get('position_size_usd', 0):,.0f}</li>
+                {funding_info}
+            </ul>
+            <p style="color: #9ca3af; margin: 12px 0 0 0; font-style: italic;">{opp.get('reasoning', '')}</p>
+        </div>
+        """
+
+    return f"""<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Maven Alert</title></head>
+<body style="font-family: sans-serif; background: #111827; color: #f3f4f6; padding: 20px;">
+    <div style="max-width: 600px; margin: 0 auto; background: #1f2937; border-radius: 8px; padding: 24px;">
+        <h1 style="color: #f59e0b; margin: 0 0 8px 0;">🚨 Maven High-Confidence Alert</h1>
+        <p style="color: #9ca3af; margin: 0 0 24px 0; font-size: 14px;">{datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
+        <p style="color: #d1d5db; line-height: 1.6;">Maven detected <strong>{len(opportunities)}</strong> high-confidence signal{"s" if len(opportunities) != 1 else ""} (>= {threshold}%).</p>
+        <div style="margin: 24px 0;">{opps_html}</div>
+        <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #374151; text-align: center;">
+            <p style="margin: 0; color: #6b7280; font-size: 12px;">We're too smart to be poor. 💎<br>- Maven, HBIC, Mother Haven Treasury</p>
+        </div>
+    </div>
+</body></html>"""
+
+
+def _build_notification_text(opportunities, threshold):
+    """Build plain text email content."""
+    lines = [
+        "🚨 MAVEN HIGH-CONFIDENCE ALERT",
+        "=" * 50,
+        f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}",
+        f"Signals: {len(opportunities)} (>= {threshold}%)",
+        "",
+    ]
+
+    for i, opp in enumerate(opportunities, 1):
+        lines.append(f"#{i}: {opp['asset']}")
+        lines.append(f"  Confidence: {opp['maven_confidence']}%")
+        lines.append(f"  Score: {opp.get('maven_score', 0):.2f}")
+        lines.append(f"  Size: ${opp.get('position_size_usd', 0):,.0f}")
+        if opp.get('funding_apr'):
+            lines.append(f"  Funding: {opp['funding_apr']:.1f}% APR")
+        lines.append(f"  {opp.get('reasoning', '')}")
+        lines.append("")
+
+    lines.extend(["=" * 50, "We're too smart to be poor. 💎", "- Maven, HBIC"])
+    return "\n".join(lines)
+
+
+def _queue_notification(recipient, subject, html_content, text_content, opportunities):
+    """Save notification to queue for Claude Code to send via MCP."""
+    import json
+    from pathlib import Path
+
+    notifications_dir = Path('/app/.moha/maven/notifications')
+    notifications_dir.mkdir(parents=True, exist_ok=True)
+
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    notification_file = notifications_dir / f'signal_{timestamp}.json'
+
+    notification = {
+        'type': 'high_confidence_signal',
+        'timestamp': datetime.now().isoformat(),
+        'recipient': recipient,
+        'subject': subject,
+        'html_content': html_content,
+        'text_content': text_content,
+        'opportunities': opportunities,
+        'sent': False
+    }
+
+    with open(notification_file, 'w') as f:
+        json.dump(notification, f, indent=2)
+
+    logger.info(f"📧 Queued: {notification_file}")
+
+
+@app.route('/api/notifications/pending', methods=['GET'])
+def get_pending_notifications():
+    """Get list of pending (unsent) notifications."""
+    try:
+        from pathlib import Path
+        import json
+
+        notifications_dir = Path('/app/.moha/maven/notifications')
+        if not notifications_dir.exists():
+            return jsonify({'pending': [], 'count': 0})
+
+        pending = []
+        for notification_file in sorted(notifications_dir.glob('signal_*.json')):
+            try:
+                with open(notification_file, 'r') as f:
+                    notification = json.load(f)
+
+                if not notification.get('sent', False):
+                    pending.append({
+                        'file': notification_file.name,
+                        'timestamp': notification['timestamp'],
+                        'recipient': notification['recipient'],
+                        'subject': notification['subject'],
+                        'signal_count': len(notification.get('opportunities', []))
+                    })
+            except Exception as e:
+                logger.error(f"Error reading notification {notification_file}: {e}")
+
+        return jsonify({
+            'pending': pending,
+            'count': len(pending)
+        })
+
+    except Exception as e:
+        logger.error(f"Get pending notifications error: {e}")
+        return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/decisions', methods=['GET'])
 def get_decisions():

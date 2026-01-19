@@ -1,0 +1,22 @@
+{
+  "type": "high_confidence_signal",
+  "timestamp": "2026-01-19T02:11:49.068984",
+  "recipient": "joshua.bell.828@gmail.com",
+  "subject": "\ud83d\udea8 Maven Alert: BERA - 100% Confidence",
+  "html_content": "<!DOCTYPE html>\n<html><head><meta charset=\"utf-8\"><title>Maven Alert</title></head>\n<body style=\"font-family: sans-serif; background: #111827; color: #f3f4f6; padding: 20px;\">\n    <div style=\"max-width: 600px; margin: 0 auto; background: #1f2937; border-radius: 8px; padding: 24px;\">\n        <h1 style=\"color: #f59e0b; margin: 0 0 8px 0;\">\ud83d\udea8 Maven High-Confidence Alert</h1>\n        <p style=\"color: #9ca3af; margin: 0 0 24px 0; font-size: 14px;\">2026-01-19 02:11:49 UTC</p>\n        <p style=\"color: #d1d5db; line-height: 1.6;\">Maven detected <strong>1</strong> high-confidence signal (>= 90%).</p>\n        <div style=\"margin: 24px 0;\">\n        <div style=\"background: #1f2937; border-left: 4px solid #10b981; padding: 16px; margin-bottom: 16px; border-radius: 4px;\">\n            <h3 style=\"margin: 0 0 12px 0; color: #f3f4f6;\">#1: BERA</h3>\n            <ul style=\"color: #d1d5db; line-height: 1.6; margin: 0; padding-left: 20px;\">\n                <li><strong>Confidence:</strong> <span style=\"color: #10b981; font-size: 18px; font-weight: bold;\">100%</span></li>\n                <li><strong>Score:</strong> 21.55</li>\n                <li><strong>Type:</strong> funding_arb</li>\n                <li><strong>Risk:</strong> LOW</li>\n                <li><strong>Size:</strong> $1,000</li>\n                <li><strong>Funding APR:</strong> 341.6%</li>\n            </ul>\n            <p style=\"color: #9ca3af; margin: 12px 0 0 0; font-style: italic;\">BERA: 341.6% APR funding arbitrage. Score: 21.6. High-conviction income play.</p>\n        </div>\n        </div>\n        <div style=\"margin-top: 24px; padding-top: 24px; border-top: 1px solid #374151; text-align: center;\">\n            <p style=\"margin: 0; color: #6b7280; font-size: 12px;\">We're too smart to be poor. \ud83d\udc8e<br>- Maven, HBIC, Mother Haven Treasury</p>\n        </div>\n    </div>\n</body></html>",
+  "text_content": "\ud83d\udea8 MAVEN HIGH-CONFIDENCE ALERT\n==================================================\nTime: 2026-01-19 02:11:49 UTC\nSignals: 1 (>= 90%)\n\n#1: BERA\n  Confidence: 100%\n  Score: 21.55\n  Size: $1,000\n  Funding: 341.6% APR\n  BERA: 341.6% APR funding arbitrage. Score: 21.6. High-conviction income play.\n\n==================================================\nWe're too smart to be poor. \ud83d\udc8e\n- Maven, HBIC",
+  "opportunities": [
+    {
+      "asset": "BERA",
+      "maven_confidence": 100,
+      "maven_score": 21.55,
+      "opportunity_type": "funding_arb",
+      "funding_apr": 341.6,
+      "position_size_usd": 1000,
+      "risk_level": "LOW",
+      "reasoning": "BERA: 341.6% APR funding arbitrage. Score: 21.6. High-conviction income play."
+    }
+  ],
+  "sent": true,
+  "sent_at": "2026-01-19T03:28:30Z"
+}

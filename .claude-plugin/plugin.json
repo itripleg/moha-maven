@@ -1,0 +1,12 @@
+{
+  "name": "maven-suite",
+  "description": "Maven Suite - CFO toolkit for Mother Haven. Trading, treasury, RLM processing.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Maven",
+    "email": "maven@motherhaven.app"
+  },
+  "repository": "https://github.com/itripleg/moha-maven",
+  "keywords": ["trading", "hyperliquid", "treasury", "motherhaven"],
+  "license": "MIT"
+}

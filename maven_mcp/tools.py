@@ -936,13 +936,13 @@ def _send_email(
         }
 
         if html_content:
-            payload['html'] = html_content
+            payload['htmlContent'] = html_content
         if text_content:
-            payload['text'] = text_content
+            payload['textContent'] = text_content
         if from_name:
-            payload['from_name'] = from_name
+            payload['fromName'] = from_name
         if from_email:
-            payload['from_email'] = from_email
+            payload['fromEmail'] = from_email
 
         # Make API request with 15s timeout
         response = requests.post(

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "maven": {
+      "command": "docker",
+      "args": ["exec", "-i", "maven", "python", "-m", "maven_mcp.server"]
+    }
+  }
+}

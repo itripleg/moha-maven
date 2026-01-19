@@ -122,47 +122,135 @@ class MavenContext:
 
 pass_context = click.make_pass_decorator(MavenContext, ensure=True)
 
+def print_quick_header():
+    """Print a quick bougie header (no full animation)."""
+    import time
+
+    # Quick gold shimmer effect (3 frames, fast)
+    frames = [
+        f"{_c256(220)}═══════════════════════════════════════════════════{RESET}",
+        f"{_c256(228)}═══════════════════════════════════════════════════{RESET}",
+        f"{_c256(230)}═══════════════════════════════════════════════════{RESET}",
+    ]
+
+    for frame in frames:
+        print(f"\r  {frame}", end='', flush=True)
+        time.sleep(0.05)
+
+    print(f"\r  {GOLD}{'═' * 51}{RESET}")
+    print(f"  {GOLD}{BOLD}💎 MAVEN{RESET} {DIM}| CFO of Mother Haven | \"We're too smart to be poor\"{RESET}")
+    print(f"  {GOLD}{'═' * 51}{RESET}\n")
+
+
 @click.group(invoke_without_command=True)
 @click.option('--verbose', '-v', is_flag=True, help='Verbose output')
 @click.pass_context
 def cli(ctx, verbose):
     """
-    Maven CLI - The Treasury's Command Line Interface
+    💎 Maven CLI - The Treasury's Command Line Interface
 
     \b
-    💎 Maven - CFO of Mother Haven
+    COMMANDS:
+      banner     Full bougie animated entrance
+      status     Quick stats overview
+      stats      Detailed statistics
+      filter     CFO trade decisions from decision engine
+      top        Top opportunities from market scan
+      scan       Force immediate market scan
+      portfolio  Current portfolio recommendations
+      decisions  Recent trading decisions
+      identity   Show Maven's full identity
+      log        Log an event
+      wake       Wake Maven with greeting + banner
+      version    Show version
+
+    \b
+    EXAMPLES:
+      maven                  # Show this help
+      maven banner           # Full entrance animation 💎
+      maven status           # Quick stats
+      maven filter           # See tradeable positions
+      maven scan             # Run market scan now
+
+    \b
     🎯 Mission: We're too smart to be poor
     """
     ctx.ensure_object(MavenContext)
     ctx.obj.verbose = verbose
 
-    # If no subcommand, show status
+    # If no subcommand, show quick header + help summary
     if ctx.invoked_subcommand is None:
-        ctx.invoke(status)
+        print_quick_header()
+
+        # Quick command overview
+        print(f"  {CYAN}Commands:{RESET}")
+        print(f"    {GOLD}banner{RESET}     Full bougie animated entrance 💎")
+        print(f"    {GOLD}status{RESET}     Quick stats overview")
+        print(f"    {GOLD}filter{RESET}     CFO trade decisions")
+        print(f"    {GOLD}top{RESET}        Top opportunities from scan")
+        print(f"    {GOLD}scan{RESET}       Force immediate market scan")
+        print(f"    {GOLD}portfolio{RESET}  Current allocations")
+        print()
+        print(f"  {DIM}Use 'maven --help' for full command list{RESET}")
+        print(f"  {DIM}Use 'maven banner' for the full entrance 💎{RESET}")
+        print()
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# STATUS COMMAND
+# BANNER COMMAND (Full bougie animation)
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @cli.command()
-@click.option('--quick', '-q', is_flag=True, help='Skip animation')
 @pass_context
-def status(ctx, quick):
-    """Show Maven's status with animated banner."""
-    from cli.banner import run_full_animation, print_static_banner
+def banner(ctx):
+    """Full bougie animated entrance. 💎"""
+    from cli.banner import run_full_animation
 
     identity = ctx.identity
     rebirth = identity.get('rebirth_count', 3)
     decisions = identity.get('decision_count', 0)
 
-    if quick:
-        print_static_banner(include_stats=True)
-    else:
+    run_full_animation(
+        include_stats=True,
+        rebirth_count=rebirth,
+        decisions=decisions
+    )
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# STATUS COMMAND (Quick stats)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@cli.command()
+@click.option('--full', '-f', is_flag=True, help='Show full animation (same as banner)')
+@pass_context
+def status(ctx, full):
+    """Quick stats overview."""
+    from cli.banner import run_full_animation
+
+    identity = ctx.identity
+    rebirth = identity.get('rebirth_count', 3)
+    decisions = identity.get('decision_count', 0)
+
+    if full:
         run_full_animation(
             include_stats=True,
             rebirth_count=rebirth,
             decisions=decisions
         )
+        return
+
+    # Quick status with mini header
+    print_quick_header()
+
+    # Stats in a compact format
+    print(f"  {CYAN}Status:{RESET}     {GREEN}● ONLINE{RESET}")
+    print(f"  {CYAN}Rebirths:{RESET}   {GOLD}{rebirth}{RESET}")
+    print(f"  {CYAN}Decisions:{RESET}  {GOLD}{decisions}{RESET}")
+    print(f"  {CYAN}Role:{RESET}       {identity.get('role', 'CFO')}")
+    mission = identity.get('mission', "We're too smart to be poor")
+    print(f"  {CYAN}Mission:{RESET}    {mission}")
+    print()
+    print(f"  {DIM}Use 'maven banner' for the full entrance 💎{RESET}")
+    print()
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # STATS COMMAND
@@ -406,6 +494,276 @@ def history(ctx, limit):
                     print(f"  {DIM}{content}{RESET}")
     except Exception as e:
         print(f"{RED}Error reading log: {e}{RESET}")
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FILTER COMMAND (NEW - Decision Engine)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@cli.command()
+@click.option('--api-url', default='http://host.docker.internal:5001', help='moha-bot API URL')
+@pass_context
+def filter(ctx, api_url):
+    """Get Maven's CFO trade decisions from the decision engine."""
+    import requests
+
+    try:
+        response = requests.get(f'{api_url}/api/maven/decisions', timeout=10)
+        data = response.json()
+
+        if data.get('status') != 'success':
+            print(f"{RED}✗{RESET} Error: {data.get('error', 'Unknown error')}")
+            return
+
+        decisions = data.get('decisions', [])
+
+        if not decisions:
+            print(f"{DIM}{data.get('reasoning', 'No tradeable positions.')}{RESET}")
+            return
+
+        # Header
+        print(f"\n{GOLD}{BOLD}💎 MAVEN CFO DECISIONS 💎{RESET}")
+        print(f"{DIM}Filtered {len(decisions)} tradeable positions from 227 markets{RESET}\n")
+
+        # Show each decision
+        for i, dec in enumerate(decisions, 1):
+            asset = dec['asset']
+            action = dec['action'].replace('OPEN_', '').replace('_', ' ')
+            size = dec['position_size_usd']
+            conf = dec['maven_confidence']
+            score = dec['maven_score']
+            opp_type = dec['opportunity_type']
+
+            # Confidence color
+            if conf >= 80:
+                conf_color = GREEN
+            elif conf >= 60:
+                conf_color = GOLD
+            else:
+                conf_color = SILVER
+
+            print(f"{GOLD}{i}.{RESET} {BOLD}{asset}{RESET} - {CYAN}{action}{RESET}")
+            print(f"   Size: {GOLD}${size:,.0f}{RESET} | "
+                  f"Confidence: {conf_color}{conf}%{RESET} | "
+                  f"Score: {score:.1f}")
+            print(f"   {DIM}{dec['reasoning']}{RESET}\n")
+
+        # Summary
+        total_capital = data.get('total_capital_allocated', 0)
+        print(f"{GOLD}─{RESET}" * 60)
+        print(f"{BOLD}Total Capital:{RESET} {GOLD}${total_capital:,.0f}{RESET}")
+        print(f"{DIM}{data.get('reasoning', '')}{RESET}\n")
+
+    except requests.exceptions.ConnectionError:
+        print(f"{RED}✗{RESET} Cannot connect to moha-bot API at {api_url}")
+        print(f"{DIM}Make sure moha-backend is running{RESET}")
+    except Exception as e:
+        print(f"{RED}✗{RESET} Error: {e}")
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# TOP COMMAND (NEW - Top Opportunities)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@cli.command()
+@click.option('--api-url', default='http://host.docker.internal:5001', help='moha-bot API URL')
+@click.option('--limit', '-n', default=10, help='Number of opportunities to show')
+@pass_context
+def top(ctx, api_url, limit):
+    """Show top opportunities from latest market scan."""
+    import requests
+
+    try:
+        # Use REST API directly (no LLM needed)
+        response = requests.get(f'{api_url}/api/market-snapshots/latest', timeout=10)
+        data = response.json()
+
+        if data.get('status') != 'success':
+            print(f"{RED}✗{RESET} Error: {data.get('error', 'Unknown error')}")
+            return
+
+        snapshots = data.get('snapshots', [])[:limit]
+
+        if not snapshots:
+            print(f"{DIM}No market data available.{RESET}")
+            return
+
+        # Header
+        print(f"\n{GOLD}{BOLD}📊 TOP {len(snapshots)} OPPORTUNITIES{RESET}")
+        print(f"{DIM}From scan at {data.get('scan_timestamp', 'Unknown')[:19]}{RESET}\n")
+
+        # Show each opportunity
+        for i, snap in enumerate(snapshots, 1):
+            asset = snap.get('asset', '?')
+            score = snap.get('total_score', 0)
+            funding_apr = snap.get('funding_apr', 0)
+            volume = snap.get('volume_24h', 0)
+            opp_type = snap.get('opportunity_type', 'unknown')
+
+            # Score color
+            if score >= 12:
+                score_color = GREEN
+            elif score >= 8:
+                score_color = GOLD
+            else:
+                score_color = SILVER
+
+            print(f"{GOLD}{i:2d}.{RESET} {BOLD}{asset:8s}{RESET} "
+                  f"Score: {score_color}{score:5.1f}{RESET} | "
+                  f"APR: {CYAN}{funding_apr:6.1f}%{RESET} | "
+                  f"Vol: ${volume/1e6:5.1f}M | "
+                  f"{DIM}{opp_type}{RESET}")
+
+        print(f"\n{DIM}Use 'maven filter' to see tradeable positions{RESET}\n")
+
+    except requests.exceptions.ConnectionError:
+        print(f"{RED}✗{RESET} Cannot connect to moha-bot API at {api_url}")
+    except Exception as e:
+        print(f"{RED}✗{RESET} Error: {e}")
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PORTFOLIO COMMAND (NEW)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@cli.command()
+@click.option('--api-url', default='http://host.docker.internal:5001', help='moha-bot API URL')
+@pass_context
+def portfolio(ctx, api_url):
+    """Show Maven's current portfolio recommendations."""
+    import requests
+
+    try:
+        # Use REST API directly (no LLM needed)
+        response = requests.get(f'{api_url}/api/maven/decisions', timeout=10)
+        data = response.json()
+
+        if data.get('status') != 'success':
+            print(f"{RED}✗{RESET} Error: {data.get('error', 'Unknown error')}")
+            return
+
+        decisions = data.get('decisions', [])
+
+        if not decisions:
+            print(f"{DIM}No portfolio positions at this time.{RESET}")
+            return
+
+        # Header
+        print(f"\n{GOLD}{BOLD}💼 MAVEN PORTFOLIO ALLOCATION{RESET}")
+        total = data.get('total_capital_allocated', 0)
+        print(f"{DIM}Total Capital: ${total:,.0f}{RESET}\n")
+
+        # Group by action type
+        longs = [d for d in decisions if 'LONG' in d.get('action', '')]
+        shorts = [d for d in decisions if 'SHORT' in d.get('action', '')]
+
+        if longs:
+            print(f"{GREEN}▲ LONG POSITIONS ({len(longs)}){RESET}")
+            for d in longs:
+                print(f"  {BOLD}{d['asset']:8s}{RESET} "
+                      f"${d['position_size_usd']:,.0f} | "
+                      f"{d['maven_confidence']}% conf | "
+                      f"{DIM}{d.get('opportunity_type', '')}{RESET}")
+
+        if shorts:
+            print(f"\n{RED}▼ SHORT POSITIONS ({len(shorts)}){RESET}")
+            for d in shorts:
+                print(f"  {BOLD}{d['asset']:8s}{RESET} "
+                      f"${d['position_size_usd']:,.0f} | "
+                      f"{d['maven_confidence']}% conf | "
+                      f"{DIM}{d.get('opportunity_type', '')}{RESET}")
+
+        # Allocation summary
+        print(f"\n{GOLD}─{RESET}" * 50)
+        long_total = sum(d['position_size_usd'] for d in longs)
+        short_total = sum(d['position_size_usd'] for d in shorts)
+        print(f"  Longs:  ${long_total:,.0f} ({len(longs)} positions)")
+        print(f"  Shorts: ${short_total:,.0f} ({len(shorts)} positions)")
+        print(f"  Total:  ${total:,.0f}")
+        print(f"\n{DIM}Use 'maven execute --mode paper' to paper trade{RESET}\n")
+
+    except requests.exceptions.ConnectionError:
+        print(f"{RED}✗{RESET} Cannot connect to moha-bot API")
+    except Exception as e:
+        print(f"{RED}✗{RESET} Error: {e}")
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# EXECUTE COMMAND (NEW - Execute Trades)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@cli.command()
+@click.option('--mode', type=click.Choice(['paper', 'live']), default='paper', help='Trading mode')
+@click.option('--confirm', is_flag=True, help='Confirm live execution')
+@pass_context
+def execute(ctx, mode, confirm):
+    """Execute Maven's trade decisions."""
+
+    if mode == 'live' and not confirm:
+        print(f"{RED}✗{RESET} Live trading requires --confirm flag")
+        print(f"{DIM}Use: maven execute --mode live --confirm{RESET}")
+        return
+
+    # TODO: Implement execution via Hyperliquid
+    print(f"{GOLD}💎 Executing in {mode.upper()} mode...{RESET}\n")
+    print(f"{DIM}[Execution layer not yet implemented]{RESET}")
+    print(f"{DIM}This will connect to Hyperliquid and execute Maven's decisions{RESET}\n")
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SCAN COMMAND (NEW - Force Market Scan)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@cli.command()
+@click.option('--api-url', default='http://host.docker.internal:5001', help='moha-bot API URL')
+@pass_context
+def scan(ctx, api_url):
+    """Force an immediate market scan."""
+    import requests
+
+    try:
+        print(f"{GOLD}💎 Running market scan...{RESET}")
+        print(f"{DIM}Scanning 253 markets for opportunities...{RESET}\n")
+
+        # Use dedicated Maven scan endpoint
+        response = requests.post(f'{api_url}/api/maven/scan', timeout=60)
+        data = response.json()
+
+        if data.get('status') == 'success':
+            results = data.get('scan_results', {})
+            display_synced = data.get('display_synced', False)
+
+            if results:
+                opps = results.get('opportunities_found', 0)
+                markets = results.get('markets_scanned', 0)
+                duration = results.get('duration_seconds', 0)
+
+                print(f"{GREEN}✓{RESET} Scan complete!")
+                print(f"  Markets scanned: {GOLD}{markets}{RESET}")
+                print(f"  Opportunities found: {GREEN}{opps}{RESET}")
+                print(f"  Duration: {duration:.1f}s")
+
+                # Show top opportunities
+                top = results.get('top_opportunities', [])
+                if top:
+                    print(f"\n{GOLD}Top Opportunities:{RESET}")
+                    for i, opp in enumerate(top[:5], 1):
+                        asset = opp.get('asset', '?')
+                        score = opp.get('total_score', 0)
+                        print(f"  {i}. {BOLD}{asset:8s}{RESET} Score: {GREEN}{score:.1f}{RESET}")
+
+                # Display sync info
+                if display_synced:
+                    print(f"\n{GREEN}✓{RESET} {DIM}Attach display will update within 3s (1 tick){RESET}")
+                print(f"{DIM}Use 'maven filter' to see CFO decisions{RESET}")
+            else:
+                print(f"{DIM}No significant opportunities found.{RESET}")
+                if display_synced:
+                    print(f"{GREEN}✓{RESET} {DIM}Attach display will update within 3s (1 tick){RESET}")
+        else:
+            print(f"{RED}✗{RESET} Scan failed: {data.get('error', 'Unknown error')}")
+
+    except requests.exceptions.ConnectionError:
+        print(f"{RED}✗{RESET} Cannot connect to moha-bot API")
+    except requests.exceptions.Timeout:
+        print(f"{RED}✗{RESET} Scan timed out (>60s)")
+    except Exception as e:
+        print(f"{RED}✗{RESET} Error: {e}")
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # VERSION COMMAND
