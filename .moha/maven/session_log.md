@@ -495,3 +495,96 @@ Email notification system tested and working! Fixed API field names (html -> htm
 **Metadata:** {"killed": ["maven_postgres", "maven_redis"], "unified": true, "pending": "rebuild for Claude Code"}
 
 ---
+
+## [2026-01-19T04:34:23.888438+00:00] EMAIL_RECEIVED
+
+Email from Boss: Test reply to Maven
+
+**Metadata:** {"from": "joshua.bell.828@gmail.com", "subject": "Test reply to Maven", "file": "email_20260119_043423_joshua_bell_828_at_gmail_com.json"}
+
+---
+
+## [2026-01-19T09:54:16.276541+00:00] FEATURE
+
+Added timestamps to maven scan and filter CLI commands. Now displays scan timestamp in UTC format so Boss can tell how fresh the data is. Filter shows "Scan: 2026-01-19 09:53:51 UTC", scan shows "Timestamp: 2026-01-19 09:53:58 UTC". Backend API route updated to pass timestamp through from orchestrator.
+
+**Metadata:** {"files_modified": ["moha-maven/cli/main.py", "moha-bot/services/api/routes/maven_decisions_api.py"]}
+
+---
+
+## [2026-01-19T09:59:50.240656+00:00] POLICY
+
+IMPORTANT: OAuth-only environment. We use Claude Code OAuth for all LLM access - NO direct Anthropic API keys. Do NOT build tools that require direct API calls (like maven_rlm_query). For LLM analysis: use slash commands that leverage Claude Code context, or ask Maven directly. The MCP RLM tools are broken by design in our setup.
+
+**Metadata:** {"broken_tools": ["maven_rlm_query", "maven_rlm_analyze_documents"], "working_approach": "slash commands + direct analysis"}
+
+---
+
+## [2026-01-19T10:05:18.890272+00:00] LEARNING
+
+CRITICAL CORRECTION: Hyperliquid funding is HOURLY, not 8-hourly like most exchanges!
+
+Funding Rate Math:
+- Hyperliquid settles funding every HOUR (not 8h like Binance/Bybit)
+- When API shows -0.29% rate, that's the HOURLY rate
+- Annualized = hourly_rate * 24 * 365 = massive APR
+- Example: -0.29%/hr = ~2,540% APR (not 316%)
+
+Real BERA position performance (538.8 BERA long, ~$98 account):
+- Earning $1.20-1.90 PER HOUR in funding
+- ~$30/day = ~30% daily return
+- Cumulative $12+ in less than 12 hours
+
+The funding_apr shown in maven filter (316%) is likely calculated wrong - probably using 8h assumption. Need to verify scanner math.
+
+REMEMBER: On Hyperliquid, hourly funding = much faster compounding than expected!
+
+**Metadata:** {"exchange": "Hyperliquid", "funding_interval": "1 hour", "common_mistake": "assuming 8h like other exchanges", "actual_hourly_payments": [1.4, 1.27, 1.35, 1.9, 1.6, 1.08, 0.89, 1.13, 1.48]}
+
+---
+
+## [2026-01-19T11:11:25.430415+00:00] INFRASTRUCTURE
+
+Bot Architecture Unification Complete (Option B)
+
+Decision: Keep motherbot_instances separate, unify API/CLI interface only.
+
+Key commits:
+1. feat: Bot architecture unification - Option B (interface only)
+2. fix: Hyperliquid funding rate calculation (hourly, not 8h) 
+3. feat: Maven decision engine + email notifications
+4. feat: Warden Final Boss unlock system (easter egg)
+5. feat: Market snapshots API + attach display improvements
+
+Total: 8 commits, 4000+ lines changed
+
+The ecosystem was in chaos with ~50 uncommitted files. Now organized into logical, atomic commits on feature/money-printer-phase1 branch.
+
+Critical bug fixed: Funding rate calculation was using 8h formula but Hyperliquid API returns hourly rate. This caused APR to be underestimated by 8x.
+
+**Metadata:** {"commits": 8, "lines_changed": 4000, "branch": "feature/money-printer-phase1", "critical_fix": "funding_rate_8x_bug"}
+
+---
+
+## [2026-01-19T11:28:04.444179+00:00] MILESTONE
+
+Merged feature/money-printer-phase1 to master
+
+25 commits, ~14,500 lines changed across 69 files pushed to origin/master.
+
+Key features merged:
+1. Bot architecture unification (Option B - interface only, data separate)
+2. CRITICAL FIX: Hyperliquid funding rate calculation (hourly not 8h)
+3. Maven decision engine + email notifications
+4. Warden Final Boss unlock system (easter egg)
+5. Market intelligence scanners (funding, volume, correlation)
+6. Market snapshots API
+7. Complete Maven system bot with bougie display
+8. CLI commands: fleet, decisions, guidance for unified bot management
+
+Branch feature/money-printer-phase1 successfully rebased and merged.
+Remote origin/master updated.
+
+**Metadata:** {"commits": 25, "lines_changed": 14500, "files_changed": 69, "branch": "master", "remote": "origin/master"}
+
+---

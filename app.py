@@ -342,7 +342,80 @@ def record_signal():
 
 
 # =============================================================================
-# DECISIONS ENDPOINTS
+# EMAIL INCOMING WEBHOOK
+# =============================================================================
+
+@app.route('/api/email/incoming', methods=['POST'])
+def email_incoming():
+    """
+    Webhook endpoint for incoming emails to maven@motherhaven.app.
+
+    Called by moha-next when SendGrid delivers an email to maven@.
+    Logs the email and queues for processing.
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'Request body required'}), 400
+
+        from_email = data.get('from', 'unknown')
+        from_name = data.get('fromName', '')
+        subject = data.get('subject', '(No Subject)')
+        text_content = data.get('textContent', '')
+        html_content = data.get('htmlContent', '')
+        received_at = data.get('receivedAt', datetime.utcnow().isoformat())
+
+        logger.info(f"📨 INCOMING EMAIL from {from_name} <{from_email}>")
+        logger.info(f"   Subject: {subject}")
+
+        # Save to git-first persistence
+        email_dir = Path(MAVEN_BASE_DIR) / '.moha' / 'maven' / 'inbox'
+        email_dir.mkdir(parents=True, exist_ok=True)
+
+        timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+        safe_from = from_email.replace('@', '_at_').replace('.', '_')[:30]
+        filename = f"email_{timestamp}_{safe_from}.json"
+
+        email_record = {
+            'from': from_email,
+            'from_name': from_name,
+            'subject': subject,
+            'text_content': text_content,
+            'html_content': html_content,
+            'received_at': received_at,
+            'processed': False,
+            'logged_at': datetime.utcnow().isoformat()
+        }
+
+        with open(email_dir / filename, 'w') as f:
+            json.dump(email_record, f, indent=2)
+
+        logger.info(f"   Saved to: {filename}")
+
+        # Log to session
+        try:
+            from maven_mcp.tools import _log_event
+            _log_event(
+                event_type='email_received',
+                content=f"Email from {from_name or from_email}: {subject}",
+                metadata={'from': from_email, 'subject': subject, 'file': filename}
+            )
+        except Exception as e:
+            logger.warning(f"Could not log to session: {e}")
+
+        return jsonify({
+            'success': True,
+            'message': 'Email received and logged',
+            'filename': filename
+        })
+
+    except Exception as e:
+        logger.error(f"Email incoming error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+# =============================================================================
+# NOTIFICATIONS ENDPOINTS
 # =============================================================================
 
 @app.route('/api/notifications/send', methods=['POST'])

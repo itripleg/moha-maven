@@ -1,0 +1,10 @@
+{
+  "from": "joshua.bell.828@gmail.com",
+  "from_name": "Boss",
+  "subject": "Test reply to Maven",
+  "text_content": "Hey Maven, did you get this? Testing the webhook.",
+  "html_content": "",
+  "received_at": "2026-01-19T04:15:00Z",
+  "processed": false,
+  "logged_at": "2026-01-19T04:34:23.883427"
+}

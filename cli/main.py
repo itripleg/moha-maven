@@ -516,13 +516,26 @@ def filter(ctx, api_url):
 
         decisions = data.get('decisions', [])
 
+        # Get timestamp and format it
+        timestamp = data.get('timestamp', '')
+        if timestamp:
+            # Parse ISO format and display nicely
+            try:
+                from datetime import datetime as dt
+                ts = dt.fromisoformat(timestamp.replace('Z', '+00:00'))
+                time_str = ts.strftime('%Y-%m-%d %H:%M:%S UTC')
+            except:
+                time_str = timestamp[:19]
+        else:
+            time_str = 'Unknown'
+
         if not decisions:
             print(f"{DIM}{data.get('reasoning', 'No tradeable positions.')}{RESET}")
             return
 
-        # Header
+        # Header with timestamp
         print(f"\n{GOLD}{BOLD}💎 MAVEN CFO DECISIONS 💎{RESET}")
-        print(f"{DIM}Filtered {len(decisions)} tradeable positions from 227 markets{RESET}\n")
+        print(f"{DIM}Scan: {time_str} | Filtered {len(decisions)} from 227 markets{RESET}\n")
 
         # Show each decision
         for i, dec in enumerate(decisions, 1):
@@ -732,8 +745,21 @@ def scan(ctx, api_url):
                 opps = results.get('opportunities_found', 0)
                 markets = results.get('markets_scanned', 0)
                 duration = results.get('duration_seconds', 0)
+                timestamp = results.get('timestamp', '')
+
+                # Format timestamp
+                if timestamp:
+                    try:
+                        from datetime import datetime as dt
+                        ts = dt.fromisoformat(timestamp.replace('Z', '+00:00'))
+                        time_str = ts.strftime('%Y-%m-%d %H:%M:%S UTC')
+                    except:
+                        time_str = timestamp[:19]
+                else:
+                    time_str = 'Unknown'
 
                 print(f"{GREEN}✓{RESET} Scan complete!")
+                print(f"  Timestamp: {DIM}{time_str}{RESET}")
                 print(f"  Markets scanned: {GOLD}{markets}{RESET}")
                 print(f"  Opportunities found: {GREEN}{opps}{RESET}")
                 print(f"  Duration: {duration:.1f}s")
